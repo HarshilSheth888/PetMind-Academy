@@ -1,0 +1,6 @@
+{
+  "name": "PetMind",
+  "description": "Learn pet mentality and behavior through expert-led articles and interactive training guides with progress tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
