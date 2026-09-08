@@ -71,6 +71,7 @@ import com.example.ui.theme.BadgePurpleBg
 import com.example.ui.theme.BadgePurpleText
 import com.example.ui.theme.BadgeRoseBg
 import com.example.ui.theme.BadgeRoseText
+import com.example.ui.theme.BrandGradient
 import com.example.ui.theme.TealPrimary
 import com.example.viewmodel.PetMindViewModel
 
@@ -111,8 +112,9 @@ fun HomeScreen(
         Column {
           Text(
             text = "PetMind",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.headlineMedium.copy(
+              brush = BrandGradient
+            ),
             fontWeight = FontWeight.ExtraBold
           )
           Text(
@@ -177,7 +179,7 @@ fun HomeScreen(
                 .align(Alignment.TopStart)
                 .padding(12.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(TealPrimary.copy(alpha = 0.88f))
+                .background(BrandGradient)
                 .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
               Text(

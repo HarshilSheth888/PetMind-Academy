@@ -70,6 +70,7 @@ import com.example.ui.components.PetAvatarBadge
 import com.example.ui.theme.AmberSecondary
 import com.example.ui.theme.BadgeGreenBg
 import com.example.ui.theme.BadgeGreenText
+import com.example.ui.theme.BrandGradient
 import com.example.ui.theme.TealPrimary
 import com.example.viewmodel.PetMindViewModel
 import java.text.SimpleDateFormat
@@ -120,9 +121,10 @@ fun ProgressScreen(
           Column {
             Text(
               text = "Pet Development",
-              style = MaterialTheme.typography.headlineMedium,
-              fontWeight = FontWeight.ExtraBold,
-              color = MaterialTheme.colorScheme.primary
+              style = MaterialTheme.typography.headlineMedium.copy(
+                brush = BrandGradient
+              ),
+              fontWeight = FontWeight.ExtraBold
             )
             Text(
               text = "Progress tracking & behavior milestones",

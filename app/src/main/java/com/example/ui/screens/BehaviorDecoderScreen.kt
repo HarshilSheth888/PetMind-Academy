@@ -56,6 +56,7 @@ import com.example.ui.theme.BadgeGreenBg
 import com.example.ui.theme.BadgeGreenText
 import com.example.ui.theme.BadgeRoseBg
 import com.example.ui.theme.BadgeRoseText
+import com.example.ui.theme.BrandGradient
 import com.example.ui.theme.TealPrimary
 import com.example.viewmodel.PetMindViewModel
 
@@ -84,9 +85,10 @@ fun BehaviorDecoderScreen(
       ) {
         Text(
           text = "Behavior Decoder",
-          style = MaterialTheme.typography.headlineMedium,
-          fontWeight = FontWeight.ExtraBold,
-          color = MaterialTheme.colorScheme.primary
+          style = MaterialTheme.typography.headlineMedium.copy(
+            brush = BrandGradient
+          ),
+          fontWeight = FontWeight.ExtraBold
         )
         Text(
           text = "Translate physical signals and body language into emotional states",

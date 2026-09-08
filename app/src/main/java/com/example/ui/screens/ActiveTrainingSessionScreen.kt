@@ -76,6 +76,7 @@ import com.example.ui.theme.BadgeGreenBg
 import com.example.ui.theme.BadgeGreenText
 import com.example.ui.theme.BadgeRoseBg
 import com.example.ui.theme.BadgeRoseText
+import com.example.ui.theme.BrandGradient
 import com.example.ui.theme.TealPrimary
 import com.example.util.ClickerAudioHelper
 import com.example.viewmodel.PetMindViewModel
@@ -361,11 +362,7 @@ fun ActiveTrainingSessionScreen(
           .size(190.dp)
           .scale(clickerScale)
           .clip(CircleShape)
-          .background(
-            Brush.radialGradient(
-              colors = listOf(AmberSecondary, Color(0xFFB55818))
-            )
-          )
+          .background(BrandGradient)
           .clickable {
             ClickerAudioHelper.playClick(context)
             successCount++

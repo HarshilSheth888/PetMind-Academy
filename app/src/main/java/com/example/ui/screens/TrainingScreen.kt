@@ -60,6 +60,7 @@ import com.example.model.TrainingGuide
 import com.example.ui.components.CategoryChip
 import com.example.ui.components.DifficultyBadge
 import com.example.ui.theme.AmberSecondary
+import com.example.ui.theme.BrandGradient
 import com.example.ui.theme.TealPrimary
 import com.example.util.ClickerAudioHelper
 import com.example.viewmodel.PetMindViewModel
@@ -93,9 +94,10 @@ fun TrainingScreen(
       ) {
         Text(
           text = "Interactive Training",
-          style = MaterialTheme.typography.headlineMedium,
-          fontWeight = FontWeight.ExtraBold,
-          color = MaterialTheme.colorScheme.primary
+          style = MaterialTheme.typography.headlineMedium.copy(
+            brush = BrandGradient
+          ),
+          fontWeight = FontWeight.ExtraBold
         )
         Text(
           text = if (activePet != null) "Training programs for ${activePet?.name}" else "Science-backed positive reinforcement guides",

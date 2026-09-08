@@ -1,17 +1,23 @@
 package com.example.ui.theme
 
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 // Brand Colors - Warm Teal, Amber, Forest, and Sand
-val TealPrimary = Color(0xFF0F5B63)
+val TealPrimary = Color(0xFF255A92)
 val TealOnPrimary = Color(0xFFFFFFFF)
-val TealPrimaryContainer = Color(0xFFD6EAEB)
-val TealOnPrimaryContainer = Color(0xFF042B30)
+val TealPrimaryContainer = Color(0xFFD7E2FF)
+val TealOnPrimaryContainer = Color(0xFF001A40)
 
-val AmberSecondary = Color(0xFFD97736)
+val AmberSecondary = Color(0xFF558FB7)
 val AmberOnSecondary = Color(0xFFFFFFFF)
-val AmberSecondaryContainer = Color(0xFFFFDEC9)
-val AmberOnSecondaryContainer = Color(0xFF331500)
+val AmberSecondaryContainer = Color(0xFFD1E5F4)
+val AmberOnSecondaryContainer = Color(0xFF001D36)
+
+// Brand Gradient matching App Icon
+val BrandGradient = Brush.linearGradient(
+  colors = listOf(Color(0xFF0A2B62), Color(0xFF97D0D9))
+)
 
 val HoneyTertiary = Color(0xFFB87822)
 val HoneyOnTertiary = Color(0xFFFFFFFF)
@@ -28,15 +34,15 @@ val OutlineLight = Color(0xFF707974)
 val OutlineVariantLight = Color(0xFFC0C9C3)
 
 // Dark Theme Palette
-val TealDarkPrimary = Color(0xFF86D5DD)
-val TealDarkOnPrimary = Color(0xFF00363B)
-val TealDarkPrimaryContainer = Color(0xFF08484F)
-val TealDarkOnPrimaryContainer = Color(0xFFD6EAEB)
+val TealDarkPrimary = Color(0xFF7FBCD0)
+val TealDarkOnPrimary = Color(0xFF00344B)
+val TealDarkPrimaryContainer = Color(0xFF004D6A)
+val TealDarkOnPrimaryContainer = Color(0xFFD7E2FF)
 
-val AmberDarkSecondary = Color(0xFFFFB68C)
-val AmberDarkOnSecondary = Color(0xFF502400)
-val AmberDarkSecondaryContainer = Color(0xFF713700)
-val AmberDarkOnSecondaryContainer = Color(0xFFFFDEC9)
+val AmberDarkSecondary = Color(0xFF6BA4C2)
+val AmberDarkOnSecondary = Color(0xFF00344B)
+val AmberDarkSecondaryContainer = Color(0xFF004D6A)
+val AmberDarkOnSecondaryContainer = Color(0xFFD1E5F4)
 
 val HoneyDarkTertiary = Color(0xFFFFBA6D)
 val HoneyDarkOnTertiary = Color(0xFF482900)
