@@ -1,11 +1,7 @@
 package com.example.ui.screens
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,15 +21,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.NavigateBefore
+import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.NavigateBefore
-import androidx.compose.material.icons.filled.NavigateNext
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -59,7 +52,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -70,16 +62,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.TrainingGuidesData
 import com.example.ui.components.LogSessionDialog
-import com.example.ui.components.PetAvatarBadge
-import com.example.ui.theme.AmberSecondary
-import com.example.ui.theme.BadgeGreenBg
-import com.example.ui.theme.BadgeGreenText
-import com.example.ui.theme.BadgeRoseBg
-import com.example.ui.theme.BadgeRoseText
+import com.example.ui.components.ThemeToggleButton
 import com.example.ui.theme.BrandGradient
 import com.example.ui.theme.TealPrimary
 import com.example.util.ClickerAudioHelper
 import com.example.viewmodel.PetMindViewModel
+import java.util.Locale
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,24 +77,25 @@ fun ActiveTrainingSessionScreen(
   guideId: String,
   viewModel: PetMindViewModel,
   onNavigateBack: () -> Unit,
-  modifier: Modifier = Modifier
+  modifier: Modifier = Modifier,
 ) {
   val context = LocalContext.current
   val guide = remember(guideId) {
     TrainingGuidesData.guides.firstOrNull { it.id == guideId } ?: TrainingGuidesData.guides.first()
   }
   val activePet by viewModel.activePet.collectAsStateWithLifecycle()
+  val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
 
   var currentStepIndex by remember { mutableIntStateOf(0) }
   val currentStep = guide.steps.getOrNull(currentStepIndex) ?: guide.steps.first()
 
   // Stopwatch state
-  var isTimerRunning by remember { mutableStateOf(true) }
+  var isTimerRunning by remember { mutableStateOf(value = true) }
   var secondsElapsed by remember { mutableIntStateOf(0) }
 
   LaunchedEffect(isTimerRunning) {
     while (isTimerRunning) {
-      delay(1000L)
+      delay(1.seconds)
       secondsElapsed++
     }
   }
@@ -115,14 +105,14 @@ fun ActiveTrainingSessionScreen(
   var repeatCount by remember { mutableIntStateOf(0) }
   val totalReps = successCount + repeatCount
 
-  var showLogDialog by remember { mutableStateOf(false) }
+  var showLogDialog by remember { mutableStateOf(value = false) }
 
   // Animated ripple on clicker
   var clickTrigger by remember { mutableIntStateOf(0) }
-  val clickerScale by androidx.compose.animation.core.animateFloatAsState(
-    targetValue = if (clickTrigger % 2 == 1) 0.92f else 1f,
-    animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.4f),
-    label = "clicker_scale"
+  val clickerScale by animateFloatAsState(
+    targetValue = if ((clickTrigger % 2) == 1) 0.92f else 1f,
+    animationSpec = spring(dampingRatio = 0.4f),
+    label = "clicker_scale",
   )
 
   Scaffold(
@@ -134,13 +124,13 @@ fun ActiveTrainingSessionScreen(
               text = guide.title,
               style = MaterialTheme.typography.titleSmall,
               fontWeight = FontWeight.Bold,
-              maxLines = 1
+              maxLines = 1,
             )
             if (activePet != null) {
               Text(
                 text = "Training with ${activePet?.name}",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
               )
             }
           }
@@ -148,12 +138,16 @@ fun ActiveTrainingSessionScreen(
         navigationIcon = {
           IconButton(
             onClick = onNavigateBack,
-            modifier = Modifier.testTag("session_back_button")
+            modifier = Modifier.testTag("session_back_button"),
           ) {
             Icon(Icons.Default.Close, contentDescription = "Exit Session")
           }
         },
         actions = {
+          ThemeToggleButton(
+            themeMode = themeMode,
+            onToggle = { viewModel.cycleThemeMode() },
+          )
           Button(
             onClick = {
               isTimerRunning = false
@@ -164,17 +158,17 @@ fun ActiveTrainingSessionScreen(
             modifier = Modifier
               .padding(end = 8.dp)
               .testTag("finish_session_top_button"),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
           ) {
             Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(4.dp))
             Text("Finish", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
           }
         },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
       )
     },
-    modifier = modifier.testTag("active_training_session_screen")
+    modifier = modifier.testTag("active_training_session_screen"),
   ) { innerPadding ->
     Column(
       modifier = Modifier
@@ -183,28 +177,28 @@ fun ActiveTrainingSessionScreen(
         .verticalScroll(rememberScrollState())
         .padding(20.dp),
       horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.spacedBy(16.dp)
+      verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
       // Step Navigator Header
       Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
       ) {
         Row(
           modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 8.dp),
           verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.SpaceBetween
+          horizontalArrangement = Arrangement.SpaceBetween,
         ) {
           IconButton(
             onClick = {
               if (currentStepIndex > 0) currentStepIndex--
             },
-            enabled = currentStepIndex > 0
+            enabled = currentStepIndex > 0,
           ) {
-            Icon(Icons.Default.NavigateBefore, contentDescription = "Previous Step")
+            Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = "Previous Step")
           }
 
           Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -212,22 +206,22 @@ fun ActiveTrainingSessionScreen(
               text = "STEP ${currentStep.stepNumber} OF ${guide.steps.size}",
               style = MaterialTheme.typography.labelSmall,
               fontWeight = FontWeight.Bold,
-              color = MaterialTheme.colorScheme.primary
+              color = MaterialTheme.colorScheme.primary,
             )
             Text(
               text = currentStep.title,
               style = MaterialTheme.typography.titleSmall,
-              fontWeight = FontWeight.Bold
+              fontWeight = FontWeight.Bold,
             )
           }
 
           IconButton(
             onClick = {
-              if (currentStepIndex < guide.steps.size - 1) currentStepIndex++
+              if (currentStepIndex < (guide.steps.size - 1)) currentStepIndex++
             },
-            enabled = currentStepIndex < guide.steps.size - 1
+            enabled = currentStepIndex < (guide.steps.size - 1),
           ) {
-            Icon(Icons.Default.NavigateNext, contentDescription = "Next Step")
+            Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = "Next Step")
           }
         }
       }
@@ -237,33 +231,33 @@ fun ActiveTrainingSessionScreen(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
       ) {
         Column(
           modifier = Modifier.padding(16.dp),
-          verticalArrangement = Arrangement.spacedBy(8.dp)
+          verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
           if (currentStep.cueWord != null) {
             Row(
               verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.spacedBy(8.dp)
+              horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
               Text(
                 text = "Target Cue Word:",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
               )
               Surface(
                 color = MaterialTheme.colorScheme.secondaryContainer,
-                shape = RoundedCornerShape(6.dp)
+                shape = RoundedCornerShape(6.dp),
               ) {
                 Text(
                   text = "\"${currentStep.cueWord}\"",
                   style = MaterialTheme.typography.labelSmall,
                   fontWeight = FontWeight.Bold,
                   color = MaterialTheme.colorScheme.onSecondaryContainer,
-                  modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                  modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                 )
               }
             }
@@ -271,12 +265,12 @@ fun ActiveTrainingSessionScreen(
           Text(
             text = currentStep.instruction,
             style = MaterialTheme.typography.bodyMedium,
-            lineHeight = 22.sp
+            lineHeight = 22.sp,
           )
           Text(
             text = "Criteria: ${currentStep.successCriteria}",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline
+            color = MaterialTheme.colorScheme.outline,
           )
         }
       }
@@ -284,35 +278,35 @@ fun ActiveTrainingSessionScreen(
       // Timer & Stats Ribbon
       Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
       ) {
         // Timer Card
         Card(
           modifier = Modifier.weight(1f),
           shape = RoundedCornerShape(14.dp),
-          colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+          colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         ) {
           Row(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
           ) {
             Column {
               Text(
-                text = String.format("%02d:%02d", secondsElapsed / 60, secondsElapsed % 60),
+                text = String.format(Locale.US, "%02d:%02d", secondsElapsed / 60, secondsElapsed % 60),
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
               )
               Text("Elapsed", style = MaterialTheme.typography.labelSmall)
             }
             IconButton(
               onClick = { isTimerRunning = !isTimerRunning },
-              modifier = Modifier.testTag("toggle_timer_button")
+              modifier = Modifier.testTag("toggle_timer_button"),
             ) {
               Icon(
                 imageVector = if (isTimerRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
                 contentDescription = if (isTimerRunning) "Pause" else "Play",
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.primary,
               )
             }
           }
@@ -322,25 +316,25 @@ fun ActiveTrainingSessionScreen(
         Card(
           modifier = Modifier.weight(1f),
           shape = RoundedCornerShape(14.dp),
-          colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+          colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         ) {
           Column(
             modifier = Modifier
               .fillMaxWidth()
               .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
           ) {
             val rate = if (totalReps > 0) ((successCount.toFloat() / totalReps) * 100).toInt() else 100
             Text(
               text = "$rate%",
               style = MaterialTheme.typography.titleLarge,
               fontWeight = FontWeight.Bold,
-              color = TealPrimary
+              color = TealPrimary,
             )
             Text(
               text = "$successCount / $totalReps Reps",
               style = MaterialTheme.typography.labelSmall,
-              color = MaterialTheme.colorScheme.onSurfaceVariant
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
           }
         }
@@ -354,7 +348,7 @@ fun ActiveTrainingSessionScreen(
         style = MaterialTheme.typography.labelSmall,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.outline,
-        textAlign = TextAlign.Center
+        textAlign = TextAlign.Center,
       )
 
       Box(
@@ -369,26 +363,26 @@ fun ActiveTrainingSessionScreen(
             clickTrigger++
           }
           .testTag("big_clicker_button"),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
       ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
           Icon(
             imageVector = Icons.Default.TouchApp,
             contentDescription = "Clicker Marker",
             tint = Color.White,
-            modifier = Modifier.size(54.dp)
+            modifier = Modifier.size(54.dp),
           )
           Spacer(modifier = Modifier.height(4.dp))
           Text(
             text = "CLICK!",
             style = MaterialTheme.typography.titleLarge,
             color = Color.White,
-            fontWeight = FontWeight.Black
+            fontWeight = FontWeight.Black,
           )
           Text(
             text = "+1 Mark Success",
             style = MaterialTheme.typography.labelSmall,
-            color = Color.White.copy(alpha = 0.85f)
+            color = Color.White.copy(alpha = 0.85f),
           )
         }
       }
@@ -398,7 +392,7 @@ fun ActiveTrainingSessionScreen(
       // Manual Rep Counter Buttons
       Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
       ) {
         Button(
           onClick = { repeatCount++ },
@@ -407,13 +401,13 @@ fun ActiveTrainingSessionScreen(
           modifier = Modifier
             .weight(1f)
             .height(52.dp)
-            .testTag("needs_repeat_button")
+            .testTag("needs_repeat_button"),
         ) {
           Text(
             text = "Needs Practice ($repeatCount)",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.SemiBold
+            fontWeight = FontWeight.SemiBold,
           )
         }
 
@@ -427,14 +421,14 @@ fun ActiveTrainingSessionScreen(
           modifier = Modifier
             .weight(1f)
             .height(52.dp)
-            .testTag("success_rep_button")
+            .testTag("success_rep_button"),
         ) {
           Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
           Spacer(modifier = Modifier.width(6.dp))
           Text(
             text = "Success ($successCount)",
             style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
           )
         }
       }
@@ -462,11 +456,11 @@ fun ActiveTrainingSessionScreen(
             difficultyRating = rating,
             notes = notes,
             currentStepCompleted = stepCompleted,
-            totalSteps = guide.steps.size
+            totalSteps = guide.steps.size,
           )
           showLogDialog = false
           onNavigateBack()
-        }
+        },
       )
     }
   }

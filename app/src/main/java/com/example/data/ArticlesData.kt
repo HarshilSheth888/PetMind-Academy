@@ -23,7 +23,7 @@ object ArticlesData {
         ArticleSection(
           heading = "1. Calming Signals vs. Physiological Needs",
           body = "When a dog yawns during a training session, turns their head away when an unfamiliar person approaches, or rapidly licks their lips without food present, they are signaling discomfort. Recognizing these low-level stress cues lets you provide space before the dog feels forced to growl or freeze.",
-          takeaway = "Never scold a dog for turning away or yawning; acknowledge their request for breathing room."
+          takeaway = "Never scold a dog for turning away or yawning; acknowledge their request for breathing room.",
         ),
         ArticleSection(
           heading = "2. The Myth of the 'Happy Wagging Tail'",

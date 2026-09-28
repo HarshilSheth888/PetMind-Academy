@@ -12,15 +12,15 @@ import kotlin.math.exp
 import kotlin.math.sin
 
 object ClickerAudioHelper {
-  private val sampleRate = 44100
-  private val durationMs = 15
-  private val numSamples = (sampleRate * (durationMs / 1000.0)).toInt()
+  private const val SAMPLE_RATE = 44100
+  private const val DURATION_MS = 15
+  private val numSamples = (SAMPLE_RATE * (DURATION_MS / 1000.0)).toInt()
   private val clickBuffer: ShortArray by lazy {
     val buffer = ShortArray(numSamples)
     val freq = 2800.0
     for (i in 0 until numSamples) {
-      val t = i.toDouble() / sampleRate
-      val envelope = exp(-i.toDouble() / (sampleRate * 0.003)) // Fast exponential decay
+      val t = i.toDouble() / SAMPLE_RATE
+      val envelope = exp(-i.toDouble() / (SAMPLE_RATE * 0.003)) // Fast exponential decay
       val sample = (sin(2.0 * Math.PI * freq * t) * envelope * Short.MAX_VALUE * 0.9).toInt()
       buffer[i] = sample.toShort()
     }
@@ -35,14 +35,14 @@ object ClickerAudioHelper {
           AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_GAME)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-            .build()
+            .build(),
         )
         .setAudioFormat(
           AudioFormat.Builder()
             .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-            .setSampleRate(sampleRate)
+            .setSampleRate(SAMPLE_RATE)
             .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-            .build()
+            .build(),
         )
         .setBufferSizeInBytes(clickBuffer.size * 2)
         .setTransferMode(AudioTrack.MODE_STATIC)

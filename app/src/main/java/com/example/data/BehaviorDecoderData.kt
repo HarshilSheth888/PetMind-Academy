@@ -18,7 +18,7 @@ object BehaviorDecoderData {
       whatOwnerShouldDo = listOf(
         "Immediately increase distance between the dog and whatever triggered the look.",
         "Turn your own body sideways and avoid direct eye contact.",
-        "Drop a treat gently on the floor and give the dog an easy escape route."
+        "Drop a treat gently on the floor and give the dog an easy escape route.",
       ),
       whatNOTToDo = listOf(
         "Do NOT lean over the dog or reach out to pet their head.",

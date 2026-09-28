@@ -3,13 +3,13 @@ package com.example.ui.navigation
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.outlined.AutoGraph
 import androidx.compose.material.icons.outlined.FitnessCenter
-import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Psychology
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -42,14 +41,14 @@ sealed class Screen(
   val route: String,
   val label: String,
   val selectedIcon: ImageVector,
-  val unselectedIcon: ImageVector
+  val unselectedIcon: ImageVector,
 ) {
-  object Learn : Screen("learn", "Learn", Icons.Default.MenuBook, Icons.Outlined.MenuBook)
+  object Learn : Screen("learn", "Learn", Icons.AutoMirrored.Filled.MenuBook, Icons.AutoMirrored.Outlined.MenuBook)
   object Training : Screen("training", "Training", Icons.Default.FitnessCenter, Icons.Outlined.FitnessCenter)
   object Decoder : Screen("decoder", "Decoder", Icons.Default.Psychology, Icons.Outlined.Psychology)
   object Progress : Screen("progress", "Progress", Icons.Default.AutoGraph, Icons.Outlined.AutoGraph)
 
-  object ArticleDetail : Screen("article/{articleId}", "Article", Icons.Default.MenuBook, Icons.Outlined.MenuBook) {
+  object ArticleDetail : Screen("article/{articleId}", "Article", Icons.AutoMirrored.Filled.MenuBook, Icons.AutoMirrored.Outlined.MenuBook) {
     fun createRoute(articleId: String) = "article/$articleId"
   }
 

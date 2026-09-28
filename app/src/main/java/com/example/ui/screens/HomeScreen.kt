@@ -14,9 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,8 +26,9 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,14 +37,16 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -58,8 +59,9 @@ import com.example.R
 import com.example.data.ArticlesData
 import com.example.model.Article
 import com.example.model.ArticleCategory
-import com.example.ui.components.CategoryChip
-import com.example.ui.components.PetAvatarBadge
+import com.example.ui.components.ArticleFilterDialog
+import com.example.ui.components.PetProfileSwitcher
+import com.example.ui.components.ThemeToggleButton
 import com.example.ui.theme.AmberSecondary
 import com.example.ui.theme.BadgeAmberBg
 import com.example.ui.theme.BadgeAmberText
@@ -72,7 +74,6 @@ import com.example.ui.theme.BadgePurpleText
 import com.example.ui.theme.BadgeRoseBg
 import com.example.ui.theme.BadgeRoseText
 import com.example.ui.theme.BrandGradient
-import com.example.ui.theme.TealPrimary
 import com.example.viewmodel.PetMindViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,15 +81,34 @@ import com.example.viewmodel.PetMindViewModel
 fun HomeScreen(
   viewModel: PetMindViewModel,
   onArticleClick: (String) -> Unit,
-  onOpenDecoder: () -> Unit,
-  onOpenTrain: () -> Unit,
-  modifier: Modifier = Modifier
+  modifier: Modifier = Modifier,
+  @Suppress("UNUSED_PARAMETER") onOpenDecoder: () -> Unit = {},
+  @Suppress("UNUSED_PARAMETER") onOpenTrain: () -> Unit = {},
 ) {
   val homeState by viewModel.homeState.collectAsStateWithLifecycle()
   val articles by viewModel.filteredArticles.collectAsStateWithLifecycle()
   val progressList by viewModel.articleProgressList.collectAsStateWithLifecycle()
   val progressMap = remember(progressList) { progressList.associateBy { it.articleId } }
   val activePet by viewModel.activePet.collectAsStateWithLifecycle()
+  val allPets by viewModel.allPets.collectAsStateWithLifecycle()
+  val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+
+  var showFilterDialog by remember { mutableStateOf(false) }
+
+  if (showFilterDialog) {
+    ArticleFilterDialog(
+      allArticles = ArticlesData.articles,
+      articleProgressList = progressList,
+      currentCategories = homeState.selectedCategories,
+      showBookmarksOnly = homeState.showBookmarksOnly,
+      currentSpecies = homeState.selectedSpecies,
+      activePet = activePet,
+      onApply = { categories, species, showBookmarks ->
+        viewModel.setArticleFilters(categories, species, showBookmarks)
+      },
+      onDismiss = { showFilterDialog = false }
+    )
+  }
 
   val dailyFact = remember {
     ArticlesData.dailyPetFacts.random()
@@ -109,7 +129,7 @@ fun HomeScreen(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
       ) {
-        Column {
+        Column(modifier = Modifier.weight(1f, fill = false)) {
           Text(
             text = "PetMind",
             style = MaterialTheme.typography.headlineMedium.copy(
@@ -124,27 +144,19 @@ fun HomeScreen(
           )
         }
 
-        if (activePet != null) {
-          Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-              .clip(RoundedCornerShape(20.dp))
-              .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
-              .padding(horizontal = 10.dp, vertical = 6.dp)
-          ) {
-            PetAvatarBadge(
-              avatarIndex = activePet!!.avatarIndex,
-              species = activePet!!.species,
-              sizeDp = 28
-            )
-            Text(
-              text = activePet!!.name,
-              style = MaterialTheme.typography.labelMedium,
-              fontWeight = FontWeight.Bold,
-              color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-          }
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          ThemeToggleButton(
+            themeMode = themeMode,
+            onToggle = { viewModel.cycleThemeMode() }
+          )
+          PetProfileSwitcher(
+            allPets = allPets,
+            activePet = activePet,
+            onPetSelected = { viewModel.selectPet(it) }
+          )
         }
       }
     }
@@ -185,7 +197,7 @@ fun HomeScreen(
               Text(
                 text = "FEATURED MENTALITY GUIDE",
                 style = MaterialTheme.typography.labelSmall,
-                color = androidx.compose.ui.graphics.Color.White,
+                color = Color.White,
                 fontWeight = FontWeight.Bold
               )
             }
@@ -277,98 +289,69 @@ fun HomeScreen(
       }
     }
 
-    // Search Bar
+    // Search Bar & Filter Button
     item {
-      OutlinedTextField(
-        value = homeState.searchQuery,
-        onValueChange = { viewModel.setArticleSearch(it) },
+      Row(
         modifier = Modifier
           .fillMaxWidth()
-          .padding(horizontal = 20.dp, vertical = 6.dp)
-          .testTag("article_search_input"),
-        placeholder = { Text("Search topics, fear, body cues, separation...") },
-        leadingIcon = {
-          Icon(Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.outline)
-        },
-        trailingIcon = {
-          if (homeState.searchQuery.isNotEmpty()) {
-            IconButton(onClick = { viewModel.setArticleSearch("") }) {
-              Icon(Icons.Default.Clear, contentDescription = "Clear")
-            }
-          }
-        },
-        shape = RoundedCornerShape(16.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-          unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-          focusedContainerColor = MaterialTheme.colorScheme.surface
-        ),
-        singleLine = true
-      )
-    }
-
-    // Category Filter Chips
-    item {
-      Column(modifier = Modifier.padding(top = 8.dp)) {
-        LazyRow(
-          contentPadding = PaddingValues(horizontal = 20.dp),
-          horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-          item {
-            CategoryChip(
-              label = "All Topics",
-              isSelected = homeState.selectedCategory == null && !homeState.showBookmarksOnly,
-              onClick = {
-                viewModel.setArticleCategory(null)
-                if (homeState.showBookmarksOnly) viewModel.toggleBookmarksFilter()
-              }
-            )
-          }
-
-          item {
-            CategoryChip(
-              label = "Saved",
-              isSelected = homeState.showBookmarksOnly,
-              onClick = { viewModel.toggleBookmarksFilter() },
-              icon = Icons.Default.Bookmark
-            )
-          }
-
-          items(ArticleCategory.values()) { category ->
-            CategoryChip(
-              label = category.title,
-              isSelected = homeState.selectedCategory == category && !homeState.showBookmarksOnly,
-              onClick = {
-                if (homeState.showBookmarksOnly) viewModel.toggleBookmarksFilter()
-                viewModel.setArticleCategory(if (homeState.selectedCategory == category) null else category)
-              }
-            )
-          }
-        }
-
-        // Species Target Pill Selector
-        Row(
+          .padding(horizontal = 20.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        OutlinedTextField(
+          value = homeState.searchQuery,
+          onValueChange = { viewModel.setArticleSearch(it) },
           modifier = Modifier
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-          horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-          listOf("All" to "All Pets", "Dog" to "🐕 Dogs", "Cat" to "🐈 Cats").forEach { (speciesKey, label) ->
-            val isSelected = homeState.selectedSpecies == speciesKey
-            Surface(
-              modifier = Modifier
-                .clip(RoundedCornerShape(10.dp))
-                .clickable { viewModel.setArticleSpecies(speciesKey) }
-                .testTag("species_filter_$speciesKey"),
-              color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-              shape = RoundedCornerShape(10.dp)
-            ) {
-              Text(
-                text = label,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-              )
+            .weight(1f)
+            .testTag("article_search_input"),
+          placeholder = { Text("Search topics...") },
+          leadingIcon = {
+            Icon(Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.outline)
+          },
+          trailingIcon = {
+            if (homeState.searchQuery.isNotEmpty()) {
+              IconButton(onClick = { viewModel.setArticleSearch("") }) {
+                Icon(Icons.Default.Clear, contentDescription = "Clear")
+              }
             }
+          },
+          shape = RoundedCornerShape(16.dp),
+          colors = OutlinedTextFieldDefaults.colors(
+            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+            focusedContainerColor = MaterialTheme.colorScheme.surface
+          ),
+          singleLine = true
+        )
+
+        val activeFiltersCount = homeState.selectedCategories.size +
+          (if (homeState.showBookmarksOnly) 1 else 0) +
+          homeState.selectedSpecies.size
+
+        IconButton(
+          onClick = { showFilterDialog = true },
+          modifier = Modifier
+            .size(52.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .testTag("article_filter_button")
+        ) {
+          BadgedBox(
+            badge = {
+              if (activeFiltersCount > 0) {
+                Badge(
+                  containerColor = MaterialTheme.colorScheme.primary,
+                  contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                  Text(activeFiltersCount.toString())
+                }
+              }
+            }
+          ) {
+            Icon(
+              imageVector = Icons.Default.FilterList,
+              contentDescription = "Filter",
+              tint = MaterialTheme.colorScheme.primary
+            )
           }
         }
       }

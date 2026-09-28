@@ -12,7 +12,7 @@ val Typography = Typography(
     fontWeight = FontWeight.Bold,
     fontSize = 30.sp,
     lineHeight = 36.sp,
-    letterSpacing = (-0.5).sp
+    letterSpacing = (-0.5).sp,
   ),
   headlineMedium = TextStyle(
     fontFamily = FontFamily.Default,

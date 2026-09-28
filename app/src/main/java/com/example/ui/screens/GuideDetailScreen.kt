@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,16 +19,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -54,9 +50,8 @@ import com.example.data.TrainingGuidesData
 import com.example.model.TrainingStep
 import com.example.ui.components.DifficultyBadge
 import com.example.ui.components.PsychologyCalloutCard
+import com.example.ui.components.ThemeToggleButton
 import com.example.ui.theme.AmberSecondary
-import com.example.ui.theme.BadgeGreenBg
-import com.example.ui.theme.BadgeGreenText
 import com.example.ui.theme.TealPrimary
 import com.example.viewmodel.PetMindViewModel
 
@@ -67,13 +62,14 @@ fun GuideDetailScreen(
   viewModel: PetMindViewModel,
   onNavigateBack: () -> Unit,
   onStartSession: (String) -> Unit,
-  modifier: Modifier = Modifier
+  modifier: Modifier = Modifier,
 ) {
   val guide = remember(guideId) {
     TrainingGuidesData.guides.firstOrNull { it.id == guideId } ?: TrainingGuidesData.guides.first()
   }
 
   val activePet by viewModel.activePet.collectAsStateWithLifecycle()
+  val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
   val currentSkillProgress by viewModel.currentPetSkillProgress.collectAsStateWithLifecycle()
   val progress = currentSkillProgress.firstOrNull { it.guideId == guide.id }
   val completedStepsCount = progress?.completedStepsCount ?: 0
@@ -95,6 +91,12 @@ fun GuideDetailScreen(
           ) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
           }
+        },
+        actions = {
+          ThemeToggleButton(
+            themeMode = themeMode,
+            onToggle = { viewModel.cycleThemeMode() }
+          )
         },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
       )
@@ -327,10 +329,10 @@ fun TrainingStepCard(step: TrainingStep, isCompleted: Boolean) {
             contentAlignment = Alignment.Center
           ) {
             if (isCompleted) {
-              Icon(Icons.Default.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(16.dp))
+              Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
             } else {
               Text(
-                text = "${step.stepNumber}",
+                text = step.stepNumber.toString(),
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer

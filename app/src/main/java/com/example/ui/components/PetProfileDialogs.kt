@@ -10,21 +10,24 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -36,7 +39,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,19 +46,27 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.example.data.model.ArticleProgressEntity
 import com.example.data.model.PetEntity
+import com.example.model.Article
+import com.example.model.ArticleCategory
+import com.example.model.GuideDifficulty
+import com.example.model.TrainingGuide
 import com.example.ui.theme.AmberSecondary
 
 @Composable
 fun AddEditPetDialog(
   existingPet: PetEntity? = null,
   onDismiss: () -> Unit,
-  onSave: (name: String, species: String, breed: String, ageMonths: Int, gender: String, tags: String, notes: String, avatarIndex: Int) -> Unit
+  onSave: (name: String, species: String, breed: String, ageMonths: Int, gender: String, tags: String, notes: String, avatarIndex: Int) -> Unit,
 ) {
   var name by remember { mutableStateOf(existingPet?.name ?: "") }
   var species by remember { mutableStateOf(existingPet?.species ?: "DOG") }
@@ -72,11 +82,18 @@ fun AddEditPetDialog(
   var notes by remember { mutableStateOf(existingPet?.notes ?: "") }
   var selectedAvatarIndex by remember { mutableIntStateOf(existingPet?.avatarIndex ?: 0) }
 
-  Dialog(onDismissRequest = onDismiss) {
+  Dialog(
+    onDismissRequest = onDismiss,
+    properties = DialogProperties(
+      usePlatformDefaultWidth = false,
+      decorFitsSystemWindows = false
+    ),
+  ) {
     Card(
       modifier = Modifier
-        .fillMaxWidth()
-        .padding(8.dp)
+        .fillMaxWidth(0.92f)
+        .padding(vertical = 16.dp)
+        .imePadding()
         .testTag("pet_profile_dialog"),
       shape = RoundedCornerShape(24.dp),
       colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -114,7 +131,7 @@ fun AddEditPetDialog(
                 .background(PetAvatarColors[index % PetAvatarColors.size])
                 .border(
                   width = if (isSelected) 3.dp else 0.dp,
-                  color = if (isSelected) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent,
+                  color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
                   shape = CircleShape
                 )
                 .clickable { selectedAvatarIndex = index }
@@ -153,7 +170,7 @@ fun AddEditPetDialog(
               Text(
                 text = label,
                 modifier = Modifier.padding(vertical = 10.dp),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                 color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
@@ -205,7 +222,7 @@ fun AddEditPetDialog(
               Text(
                 text = label,
                 modifier = Modifier.padding(vertical = 10.dp),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                 color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
@@ -236,7 +253,9 @@ fun AddEditPetDialog(
 
         // Actions
         Row(
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
           horizontalArrangement = Arrangement.End,
           verticalAlignment = Alignment.CenterVertically
         ) {
@@ -247,7 +266,7 @@ fun AddEditPetDialog(
           Button(
             onClick = {
               if (name.isNotBlank()) {
-                val totalMonths = (ageYearsText.toIntOrNull() ?: 0) * 12 + (ageMonthsText.toIntOrNull() ?: 0)
+                val totalMonths = ((ageYearsText.toIntOrNull() ?: 0) * 12) + (ageMonthsText.toIntOrNull() ?: 0)
                 onSave(name.trim(), species, breed.trim(), totalMonths, gender, tags.trim(), notes.trim(), selectedAvatarIndex)
                 onDismiss()
               }
@@ -278,11 +297,18 @@ fun LogSessionDialog(
   var notes by remember { mutableStateOf("") }
   var stepCompleted by remember { mutableIntStateOf(currentStepIndex + 1) }
 
-  Dialog(onDismissRequest = onDismiss) {
+  Dialog(
+    onDismissRequest = onDismiss,
+    properties = DialogProperties(
+      usePlatformDefaultWidth = false,
+      decorFitsSystemWindows = false
+    )
+  ) {
     Card(
       modifier = Modifier
-        .fillMaxWidth()
-        .padding(8.dp)
+        .fillMaxWidth(0.92f)
+        .padding(vertical = 16.dp)
+        .imePadding()
         .testTag("log_session_dialog"),
       shape = RoundedCornerShape(24.dp),
       colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -327,7 +353,7 @@ fun LogSessionDialog(
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
               Text(
-                text = "$repetitions",
+                text = repetitions.toString(),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
               )
@@ -383,7 +409,7 @@ fun LogSessionDialog(
               Text(
                 text = "Step $step",
                 modifier = Modifier.padding(vertical = 8.dp),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelSmall,
                 color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
@@ -422,6 +448,298 @@ fun LogSessionDialog(
           ) {
             Text("Save Log")
           }
+        }
+      }
+    }
+  }
+}
+
+@Composable
+fun TrainingFilterDialog(
+  allGuides: List<TrainingGuide>,
+  currentDifficulties: Set<GuideDifficulty>,
+  currentCategories: Set<String>,
+  currentSpecies: Set<String>,
+  activePet: PetEntity? = null,
+  onApply: (Set<GuideDifficulty>, Set<String>, Set<String>) -> Unit,
+  onDismiss: () -> Unit
+) {
+  var tempDifficulties by remember { mutableStateOf(currentDifficulties) }
+  var tempCategories by remember { mutableStateOf(currentCategories) }
+  var tempSpecies by remember { mutableStateOf(currentSpecies) }
+
+  val filteredCount = remember(tempDifficulties, tempCategories, tempSpecies, activePet) {
+    allGuides.filter { guide ->
+      val matchesDifficulty = tempDifficulties.isEmpty() || (guide.difficulty in tempDifficulties)
+      val matchesCategory = tempCategories.isEmpty() || tempCategories.any { it.equals(guide.category, ignoreCase = true) }
+      val matchesSpecies = guide.matchesSpecies(tempSpecies, activePet)
+      matchesDifficulty && matchesCategory && matchesSpecies
+    }.size
+  }
+
+  Dialog(onDismissRequest = onDismiss) {
+    Card(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(16.dp)
+        .testTag("training_filter_dialog"),
+      shape = RoundedCornerShape(24.dp),
+      colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+      Column(
+        modifier = Modifier
+          .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+      ) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Text(
+            text = "Filter Guides",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+          )
+          IconButton(onClick = onDismiss) {
+            Icon(Icons.Default.Close, contentDescription = "Close")
+          }
+        }
+
+        Text("Difficulty", style = MaterialTheme.typography.labelLarge)
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          item {
+            CategoryChip(
+              label = "All",
+              isSelected = tempDifficulties.isEmpty(),
+              onClick = { tempDifficulties = emptySet() }
+            )
+          }
+          items(GuideDifficulty.entries.toTypedArray()) { diff ->
+            val isSelected = diff in tempDifficulties
+            CategoryChip(
+              label = diff.label,
+              isSelected = isSelected,
+              onClick = {
+                tempDifficulties = if (isSelected) tempDifficulties - diff else tempDifficulties + diff
+              }
+            )
+          }
+        }
+
+        Text("Category", style = MaterialTheme.typography.labelLarge)
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          item {
+            CategoryChip(
+              label = "All",
+              isSelected = tempCategories.isEmpty(),
+              onClick = { tempCategories = emptySet() }
+            )
+          }
+          items(listOf("Manners", "Focus", "Safety", "Confidence", "Tricks")) { cat ->
+            val isSelected = cat in tempCategories
+            Surface(
+              modifier = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .clickable {
+                  tempCategories = if (isSelected) tempCategories - cat else tempCategories + cat
+                }
+                .testTag("filter_category_$cat"),
+              color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+              shape = RoundedCornerShape(12.dp)
+            ) {
+              Text(
+                text = cat,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+              )
+            }
+          }
+        }
+
+        Text("Species", style = MaterialTheme.typography.labelLarge)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          listOf("Dog" to "🐕 Dogs", "Cat" to "🐈 Cats").forEach { (speciesKey, label) ->
+            val isSelected = speciesKey in tempSpecies
+            Surface(
+              modifier = Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(12.dp))
+                .clickable {
+                  tempSpecies = if (isSelected) tempSpecies - speciesKey else tempSpecies + speciesKey
+                },
+              color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+              shape = RoundedCornerShape(12.dp)
+            ) {
+              Text(
+                text = label,
+                modifier = Modifier.padding(vertical = 10.dp),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+              )
+            }
+          }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+          onClick = {
+            onApply(tempDifficulties, tempCategories, tempSpecies)
+            onDismiss()
+          },
+          modifier = Modifier.fillMaxWidth(),
+          shape = RoundedCornerShape(12.dp)
+        ) {
+          Text("Apply Filters ($filteredCount)")
+        }
+      }
+    }
+  }
+}
+
+@Composable
+fun ArticleFilterDialog(
+  allArticles: List<Article>,
+  articleProgressList: List<ArticleProgressEntity>,
+  currentCategories: Set<ArticleCategory>,
+  showBookmarksOnly: Boolean,
+  currentSpecies: Set<String>,
+  activePet: PetEntity? = null,
+  onApply: (Set<ArticleCategory>, Set<String>, Boolean) -> Unit,
+  onDismiss: () -> Unit
+) {
+  var tempCategories by remember { mutableStateOf(currentCategories) }
+  var tempBookmarksOnly by remember { mutableStateOf(showBookmarksOnly) }
+  var tempSpecies by remember { mutableStateOf(currentSpecies) }
+
+  val filteredCount = remember(tempCategories, tempBookmarksOnly, tempSpecies, articleProgressList, activePet) {
+    val progressMap = articleProgressList.associateBy { it.articleId }
+    allArticles.filter { article ->
+      val matchesCategory = tempCategories.isEmpty() || article.category in tempCategories
+      val matchesSpecies = article.matchesSpecies(tempSpecies, activePet)
+      val matchesBookmark = !tempBookmarksOnly || (progressMap[article.id]?.isBookmarked == true)
+      matchesCategory && matchesSpecies && matchesBookmark
+    }.size
+  }
+
+  Dialog(onDismissRequest = onDismiss) {
+    Card(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(16.dp)
+        .testTag("article_filter_dialog"),
+      shape = RoundedCornerShape(24.dp),
+      colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+      Column(
+        modifier = Modifier
+          .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+      ) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Text(
+            text = "Filter Articles",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+          )
+          IconButton(onClick = onDismiss) {
+            Icon(Icons.Default.Close, contentDescription = "Close")
+          }
+        }
+
+        // Saved / Bookmarks Toggle
+        Surface(
+          modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { tempBookmarksOnly = !tempBookmarksOnly },
+          color = if (tempBookmarksOnly) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+          shape = RoundedCornerShape(12.dp)
+        ) {
+          Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+          ) {
+            Icon(
+              imageVector = if (tempBookmarksOnly) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
+              contentDescription = null,
+              tint = if (tempBookmarksOnly) AmberSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+              text = "Show Saved Articles Only",
+              style = MaterialTheme.typography.labelLarge,
+              fontWeight = if (tempBookmarksOnly) FontWeight.Bold else FontWeight.Normal,
+              color = if (tempBookmarksOnly) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+          }
+        }
+
+        Text("Topics", style = MaterialTheme.typography.labelLarge)
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          item {
+            CategoryChip(
+              label = "All Topics",
+              isSelected = tempCategories.isEmpty(),
+              onClick = { tempCategories = emptySet() }
+            )
+          }
+          items(ArticleCategory.entries.toTypedArray()) { category ->
+            val isSelected = category in tempCategories
+            CategoryChip(
+              label = category.title,
+              isSelected = isSelected,
+              onClick = {
+                tempCategories = if (isSelected) tempCategories - category else tempCategories + category
+              }
+            )
+          }
+        }
+
+        Text("Species", style = MaterialTheme.typography.labelLarge)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          listOf("Dog" to "🐕 Dogs", "Cat" to "🐈 Cats").forEach { (speciesKey, label) ->
+            val isSelected = speciesKey in tempSpecies
+            Surface(
+              modifier = Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(12.dp))
+                .clickable {
+                  tempSpecies = if (isSelected) tempSpecies - speciesKey else tempSpecies + speciesKey
+                },
+              color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+              shape = RoundedCornerShape(12.dp)
+            ) {
+              Text(
+                text = label,
+                modifier = Modifier.padding(vertical = 10.dp),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+              )
+            }
+          }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+          onClick = {
+            onApply(tempCategories, tempSpecies, tempBookmarksOnly)
+            onDismiss()
+          },
+          modifier = Modifier.fillMaxWidth(),
+          shape = RoundedCornerShape(12.dp)
+        ) {
+          Text("Apply Filters ($filteredCount)")
         }
       }
     }

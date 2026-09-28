@@ -1,6 +1,5 @@
 package com.example.ui.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,10 +22,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -41,10 +43,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -55,10 +60,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.R
+import com.example.data.TrainingGuidesData
 import com.example.model.GuideDifficulty
 import com.example.model.TrainingGuide
 import com.example.ui.components.CategoryChip
 import com.example.ui.components.DifficultyBadge
+import com.example.ui.components.PetProfileSwitcher
+import com.example.ui.components.ThemeToggleButton
+import com.example.ui.components.TrainingFilterDialog
 import com.example.ui.theme.AmberSecondary
 import com.example.ui.theme.BrandGradient
 import com.example.ui.theme.TealPrimary
@@ -70,14 +79,32 @@ fun TrainingScreen(
   viewModel: PetMindViewModel,
   onGuideClick: (String) -> Unit,
   onStartSession: (String) -> Unit,
-  modifier: Modifier = Modifier
+  modifier: Modifier = Modifier,
 ) {
   val context = LocalContext.current
   val trainingState by viewModel.trainingState.collectAsStateWithLifecycle()
   val guides by viewModel.filteredGuides.collectAsStateWithLifecycle()
   val activePet by viewModel.activePet.collectAsStateWithLifecycle()
+  val allPets by viewModel.allPets.collectAsStateWithLifecycle()
+  val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
   val currentSkillProgress by viewModel.currentPetSkillProgress.collectAsStateWithLifecycle()
   val progressMap = remember(currentSkillProgress) { currentSkillProgress.associateBy { it.guideId } }
+
+  var showFilterDialog by remember { mutableStateOf(value = false) }
+
+  if (showFilterDialog) {
+    TrainingFilterDialog(
+      allGuides = TrainingGuidesData.guides,
+      currentDifficulties = trainingState.selectedDifficulties,
+      currentCategories = trainingState.selectedCategories,
+      currentSpecies = trainingState.selectedSpecies,
+      activePet = activePet,
+      onApply = { difficulties, categories, species ->
+        viewModel.setTrainingFilters(difficulties, categories, species)
+      },
+      onDismiss = { showFilterDialog = false }
+    )
+  }
 
   LazyColumn(
     modifier = modifier
@@ -87,23 +114,42 @@ fun TrainingScreen(
   ) {
     // Header
     item {
-      Column(
+      Row(
         modifier = Modifier
           .fillMaxWidth()
-          .padding(horizontal = 20.dp, vertical = 16.dp)
+          .padding(horizontal = 20.dp, vertical = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
       ) {
-        Text(
-          text = "Interactive Training",
-          style = MaterialTheme.typography.headlineMedium.copy(
-            brush = BrandGradient
-          ),
-          fontWeight = FontWeight.ExtraBold
-        )
-        Text(
-          text = if (activePet != null) "Training programs for ${activePet?.name}" else "Science-backed positive reinforcement guides",
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Column(modifier = Modifier.weight(1f, fill = false)) {
+          Text(
+            text = "Interactive Training",
+            style = MaterialTheme.typography.headlineMedium.copy(
+              brush = BrandGradient
+            ),
+            fontWeight = FontWeight.ExtraBold
+          )
+          Text(
+            text = if (activePet != null) "Programs for ${activePet?.name}" else "Expert positive reinforcement guides",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+          )
+        }
+
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          ThemeToggleButton(
+            themeMode = themeMode,
+            onToggle = { viewModel.cycleThemeMode() }
+          )
+          PetProfileSwitcher(
+            allPets = allPets,
+            activePet = activePet,
+            onPetSelected = { viewModel.selectPet(it) }
+          )
+        }
       }
     }
 
@@ -150,7 +196,7 @@ fun TrainingScreen(
             Icon(
               imageVector = Icons.Default.TouchApp,
               contentDescription = "Click",
-              tint = androidx.compose.ui.graphics.Color.White,
+              tint = Color.White,
               modifier = Modifier.size(28.dp)
             )
           }
@@ -158,80 +204,66 @@ fun TrainingScreen(
       }
     }
 
-    // Search Bar
+    // Search Bar & Filter Button
     item {
-      OutlinedTextField(
-        value = trainingState.searchQuery,
-        onValueChange = { viewModel.setGuideSearch(it) },
+      Row(
         modifier = Modifier
           .fillMaxWidth()
-          .padding(horizontal = 20.dp, vertical = 8.dp)
-          .testTag("training_search_input"),
-        placeholder = { Text("Search guides, leash, recall, crate, tricks...") },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.outline) },
-        trailingIcon = {
-          if (trainingState.searchQuery.isNotEmpty()) {
-            IconButton(onClick = { viewModel.setGuideSearch("") }) {
-              Icon(Icons.Default.Clear, contentDescription = "Clear")
-            }
-          }
-        },
-        shape = RoundedCornerShape(16.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-          unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-          focusedContainerColor = MaterialTheme.colorScheme.surface
-        ),
-        singleLine = true
-      )
-    }
-
-    // Difficulty Filter Chips
-    item {
-      LazyRow(
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp),
+          .padding(horizontal = 20.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
-        item {
-          CategoryChip(
-            label = "All Levels",
-            isSelected = trainingState.selectedDifficulty == null,
-            onClick = { viewModel.setGuideDifficulty(null) }
-          )
-        }
-        items(GuideDifficulty.values()) { diff ->
-          CategoryChip(
-            label = diff.label,
-            isSelected = trainingState.selectedDifficulty == diff,
-            onClick = {
-              viewModel.setGuideDifficulty(if (trainingState.selectedDifficulty == diff) null else diff)
+        OutlinedTextField(
+          value = trainingState.searchQuery,
+          onValueChange = { viewModel.setGuideSearch(it) },
+          modifier = Modifier
+            .weight(1f)
+            .testTag("training_search_input"),
+          placeholder = { Text("Search guides...") },
+          leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.outline) },
+          trailingIcon = {
+            if (trainingState.searchQuery.isNotEmpty()) {
+              IconButton(onClick = { viewModel.setGuideSearch("") }) {
+                Icon(Icons.Default.Clear, contentDescription = "Clear")
+              }
             }
-          )
-        }
-      }
-    }
+          },
+          shape = RoundedCornerShape(16.dp),
+          colors = OutlinedTextFieldDefaults.colors(
+            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+            focusedContainerColor = MaterialTheme.colorScheme.surface
+          ),
+          singleLine = true
+        )
 
-    // Category / Focus Chips
-    item {
-      LazyRow(
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-      ) {
-        items(listOf("All", "Manners", "Focus", "Safety", "Confidence", "Tricks")) { cat ->
-          val isSelected = trainingState.selectedCategory == cat
-          Surface(
-            modifier = Modifier
-              .clip(RoundedCornerShape(12.dp))
-              .clickable { viewModel.setGuideCategory(cat) }
-              .testTag("guide_category_$cat"),
-            color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            shape = RoundedCornerShape(12.dp)
+        val activeFiltersCount = trainingState.selectedDifficulties.size +
+          trainingState.selectedCategories.size +
+          trainingState.selectedSpecies.size
+
+        IconButton(
+          onClick = { showFilterDialog = true },
+          modifier = Modifier
+            .size(52.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .testTag("training_filter_button")
+        ) {
+          BadgedBox(
+            badge = {
+              if (activeFiltersCount > 0) {
+                Badge(
+                  containerColor = MaterialTheme.colorScheme.primary,
+                  contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                  Text(activeFiltersCount.toString())
+                }
+              }
+            }
           ) {
-            Text(
-              text = cat,
-              modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-              style = MaterialTheme.typography.labelSmall,
-              fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-              color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+            Icon(
+              imageVector = Icons.Default.FilterList,
+              contentDescription = "Filter",
+              tint = MaterialTheme.colorScheme.primary
             )
           }
         }
@@ -259,7 +291,7 @@ fun TrainingScreen(
     items(guides, key = { it.id }) { guide ->
       val progress = progressMap[guide.id]
       val completedSteps = progress?.completedStepsCount ?: 0
-      val isMastered = progress?.isMastered == true || completedSteps >= guide.steps.size
+      val isMastered = (progress?.isMastered == true) || (completedSteps >= guide.steps.size)
 
       TrainingGuideCardItem(
         guide = guide,

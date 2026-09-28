@@ -30,7 +30,7 @@ private val DarkColorScheme = darkColorScheme(
   surfaceVariant = SurfaceVariantDark,
   onSurfaceVariant = SurfaceVariantOnDark,
   outline = OutlineDark,
-  outlineVariant = OutlineVariantDark
+  outlineVariant = OutlineVariantDark,
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -56,14 +56,24 @@ private val LightColorScheme = lightColorScheme(
   outlineVariant = OutlineVariantLight
 )
 
+enum class ThemeMode {
+  SYSTEM, LIGHT, DARK
+}
+
 @Composable
 fun PetMindTheme(
-  darkTheme: Boolean = isSystemInDarkTheme(),
+  themeMode: ThemeMode = ThemeMode.SYSTEM,
   dynamicColor: Boolean = false, // Keep branded colors consistent
   content: @Composable () -> Unit
 ) {
+  val darkTheme = when (themeMode) {
+    ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    ThemeMode.LIGHT -> false
+    ThemeMode.DARK -> true
+  }
+
   val colorScheme = when {
-    dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+    dynamicColor && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) -> {
       val context = LocalContext.current
       if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     }

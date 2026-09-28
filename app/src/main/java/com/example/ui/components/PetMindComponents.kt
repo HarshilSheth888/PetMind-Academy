@@ -1,51 +1,51 @@
 package com.example.ui.components
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.Pets
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.PetEntity
-import com.example.model.ArticleCategory
 import com.example.model.EmotionalState
 import com.example.model.GuideDifficulty
 import com.example.ui.theme.AmberSecondary
@@ -59,7 +59,7 @@ import com.example.ui.theme.BadgePurpleBg
 import com.example.ui.theme.BadgePurpleText
 import com.example.ui.theme.BadgeRoseBg
 import com.example.ui.theme.BadgeRoseText
-import com.example.ui.theme.TealPrimary
+import com.example.ui.theme.ThemeMode
 
 @Composable
 fun CategoryChip(
@@ -212,10 +212,9 @@ val PetAvatarEmojis = listOf("🐕", "🐈", "🦮", "🐱", "🐶", "🐾")
 
 @Composable
 fun PetAvatarBadge(
-  avatarIndex: Int,
-  species: String,
-  sizeDp: Int = 44,
-  modifier: Modifier = Modifier
+    avatarIndex: Int,
+    sizeDp: Int = 44,
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
 ) {
   val safeIndex = (avatarIndex).coerceIn(0, PetAvatarEmojis.size - 1)
   val bg = PetAvatarColors[safeIndex % PetAvatarColors.size]
@@ -230,7 +229,129 @@ fun PetAvatarBadge(
   ) {
     Text(
       text = emoji,
-      fontSize = (sizeDp * 0.52).sp
+      fontSize = (sizeDp * 0.6).sp, // Slightly larger emoji
+      style = TextStyle(
+        platformStyle = PlatformTextStyle(includeFontPadding = false),
+        textAlign = TextAlign.Center
+      )
     )
+  }
+}
+
+@Composable
+fun PetProfileSwitcher(
+  allPets: List<PetEntity>,
+  activePet: PetEntity?,
+  onPetSelected: (Long) -> Unit,
+  modifier: Modifier = Modifier
+) {
+  if (allPets.isEmpty()) return
+
+  val pagerState = rememberPagerState(pageCount = { allPets.size })
+
+  LaunchedEffect(activePet, allPets) {
+    val index = allPets.indexOfFirst { it.id == activePet?.id }
+    if (index >= 0 && index != pagerState.currentPage) {
+      pagerState.animateScrollToPage(index)
+    }
+  }
+
+  LaunchedEffect(pagerState.currentPage) {
+    if (allPets.isNotEmpty() && pagerState.currentPage < allPets.size) {
+      val selectedPet = allPets[pagerState.currentPage]
+      if (selectedPet.id != activePet?.id) {
+        onPetSelected(selectedPet.id)
+      }
+    }
+  }
+
+  val currentWidth = remember(pagerState.currentPage, allPets) {
+    val name = allPets.getOrNull(pagerState.currentPage)?.name ?: ""
+    80f + (name.length * 9f)
+  }
+  val targetWidth = remember(pagerState.targetPage, allPets) {
+    val name = allPets.getOrNull(pagerState.targetPage)?.name ?: ""
+    80f + (name.length * 9f)
+  }
+  val offset = pagerState.currentPageOffsetFraction
+  val progress = if (offset < 0) -offset else offset
+  val animatedWidth = (currentWidth + (targetWidth - currentWidth) * progress).dp
+
+  HorizontalPager(
+    state = pagerState,
+    modifier = modifier
+      .width(animatedWidth)
+      .height(44.dp)
+      .clip(RoundedCornerShape(8.dp))
+      .background(MaterialTheme.colorScheme.primaryContainer)
+      .testTag("pet_profile_pager")
+  ) { page ->
+    val pet = allPets.getOrNull(page)
+    if (pet != null) {
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier
+          .fillMaxSize()
+          .padding(horizontal = 10.dp)
+      ) {
+        PetAvatarBadge(
+          avatarIndex = pet.avatarIndex,
+          sizeDp = 26
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+          text = pet.name,
+          style = MaterialTheme.typography.labelMedium.copy(
+            fontWeight = FontWeight.ExtraBold,
+            platformStyle = PlatformTextStyle(includeFontPadding = false)
+          ),
+          color = MaterialTheme.colorScheme.onPrimaryContainer,
+          maxLines = 1,
+          overflow = TextOverflow.Visible
+        )
+      }
+    }
+  }
+}
+
+@Composable
+fun ThemeToggleButton(
+  themeMode: ThemeMode,
+  onToggle: () -> Unit,
+  modifier: Modifier = Modifier
+) {
+  val (icon, label) = when (themeMode) {
+    ThemeMode.SYSTEM -> Icons.Default.BrightnessAuto to "Device Default"
+    ThemeMode.LIGHT -> Icons.Default.LightMode to "Light"
+    ThemeMode.DARK -> Icons.Default.DarkMode to "Dark"
+  }
+
+  Surface(
+    modifier = modifier
+      .clip(RoundedCornerShape(20.dp))
+      .clickable(onClick = onToggle)
+      .testTag("theme_toggle_button"),
+    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+    shape = RoundedCornerShape(20.dp)
+  ) {
+    Row(
+      modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+      Icon(
+        imageVector = icon,
+        contentDescription = "Theme: $label",
+        modifier = Modifier.size(18.dp),
+        tint = MaterialTheme.colorScheme.onSurfaceVariant
+      )
+      Text(
+        text = label,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Medium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+      )
+    }
   }
 }

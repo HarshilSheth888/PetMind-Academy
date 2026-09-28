@@ -1,6 +1,5 @@
 package com.example.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -65,6 +64,7 @@ import com.example.R
 import com.example.data.ArticlesData
 import com.example.model.QuizQuestion
 import com.example.ui.components.PsychologyCalloutCard
+import com.example.ui.components.ThemeToggleButton
 import com.example.ui.theme.AmberSecondary
 import com.example.ui.theme.BadgeGreenBg
 import com.example.ui.theme.BadgeGreenText
@@ -79,19 +79,20 @@ fun ArticleDetailScreen(
   articleId: String,
   viewModel: PetMindViewModel,
   onNavigateBack: () -> Unit,
-  modifier: Modifier = Modifier
+  modifier: Modifier = Modifier,
 ) {
   val article = remember(articleId) {
     ArticlesData.articles.firstOrNull { it.id == articleId } ?: ArticlesData.articles.first()
   }
 
   val progressList by viewModel.articleProgressList.collectAsStateWithLifecycle()
+  val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
   val progress = progressList.firstOrNull { it.articleId == article.id }
   val isBookmarked = progress?.isBookmarked == true
   val isRead = progress?.isRead == true
 
   val selectedAnswers = remember { mutableStateMapOf<Int, Int>() }
-  var quizSubmitted by remember { mutableStateOf(false) }
+  var quizSubmitted by remember { mutableStateOf(value = false) }
 
   val imageRes = when (article.heroImageResName) {
     "img_hero_pet_mentality" -> R.drawable.img_hero_pet_mentality
@@ -119,6 +120,10 @@ fun ArticleDetailScreen(
           }
         },
         actions = {
+          ThemeToggleButton(
+            themeMode = themeMode,
+            onToggle = { viewModel.cycleThemeMode() }
+          )
           IconButton(
             onClick = { viewModel.toggleArticleBookmark(article.id) },
             modifier = Modifier.testTag("detail_bookmark_btn")
@@ -323,7 +328,7 @@ fun ArticleDetailScreen(
             )
           }
 
-          if (!quizSubmitted && selectedAnswers.size == article.quiz.size) {
+          if (!quizSubmitted && (selectedAnswers.size == article.quiz.size)) {
             Button(
               onClick = {
                 quizSubmitted = true
@@ -420,7 +425,7 @@ fun QuizQuestionItem(
         val (bgColor, borderColor, textColor) = when {
           !isSubmitted && isSelected -> Triple(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimaryContainer)
           isSubmitted && isCorrect -> Triple(BadgeGreenBg, Color(0xFF137333), BadgeGreenText)
-          isSubmitted && isSelected && !isCorrect -> Triple(BadgeRoseBg, Color(0xFFC5221F), BadgeRoseText)
+          isSubmitted && isSelected -> Triple(BadgeRoseBg, Color(0xFFC5221F), BadgeRoseText)
           else -> Triple(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f), Color.Transparent, MaterialTheme.colorScheme.onSurface)
         }
 

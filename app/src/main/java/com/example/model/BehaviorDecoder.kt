@@ -1,12 +1,12 @@
 package com.example.model
 
-enum class EmotionalState(val label: String, val badgeColor: String, val icon: String) {
-  CALM_CONTENT("Calm & Content", "Green", "😊"),
-  PLAYFUL_EXCITED("Playful & Engaged", "Blue", "🎾"),
-  ALERT_FOCUSED("Alert & Assessing", "Amber", "👀"),
-  ANXIOUS_STRESSED("Stressed / Subtle Fear", "Rose", "⚠️"),
-  DEFENSIVE_FEARFUL("Defensive / Fear Threat", "Purple", "🛑"),
-  OVERSTIMULATED("Overstimulated", "Rose", "⚡")
+enum class EmotionalState(val label: String, val icon: String) {
+  CALM_CONTENT("Calm & Content", "😊"),
+  PLAYFUL_EXCITED("Playful & Engaged", "🎾"),
+  ALERT_FOCUSED("Alert & Assessing", "👀"),
+  ANXIOUS_STRESSED("Stressed / Subtle Fear", "⚠️"),
+  DEFENSIVE_FEARFUL("Defensive / Fear Threat", "🛑"),
+  OVERSTIMULATED("Overstimulated", "⚡")
 }
 
 data class BehaviorSignal(
@@ -19,5 +19,5 @@ data class BehaviorSignal(
   val whatItMeans: String,
   val scientificExplanation: String,
   val whatOwnerShouldDo: List<String>,
-  val whatNOTToDo: List<String>
+  val whatNOTToDo: List<String>,
 )

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -58,6 +57,7 @@ import com.example.ui.theme.BadgeRoseBg
 import com.example.ui.theme.BadgeRoseText
 import com.example.ui.theme.BrandGradient
 import com.example.ui.theme.TealPrimary
+import com.example.ui.components.ThemeToggleButton
 import com.example.viewmodel.PetMindViewModel
 
 @Composable
@@ -67,6 +67,7 @@ fun BehaviorDecoderScreen(
 ) {
   val decoderState by viewModel.decoderState.collectAsStateWithLifecycle()
   val signals by viewModel.filteredSignals.collectAsStateWithLifecycle()
+  val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
   val expandedCards = remember { mutableStateMapOf<String, Boolean>() }
 
   LazyColumn(
@@ -77,23 +78,34 @@ fun BehaviorDecoderScreen(
   ) {
     // Header
     item {
-      Column(
+      Row(
         modifier = Modifier
           .fillMaxWidth()
           .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
       ) {
-        Text(
-          text = "Behavior Decoder",
-          style = MaterialTheme.typography.headlineMedium.copy(
-            brush = BrandGradient
-          ),
-          fontWeight = FontWeight.ExtraBold
-        )
-        Text(
-          text = "Translate physical signals and body language into emotional states",
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant
+        Column(
+          modifier = Modifier.weight(1f, fill = false),
+          verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+          Text(
+            text = "Behavior Decoder",
+            style = MaterialTheme.typography.headlineMedium.copy(
+              brush = BrandGradient
+            ),
+            fontWeight = FontWeight.ExtraBold
+          )
+          Text(
+            text = "Translate physical signals and body language into emotional states",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+          )
+        }
+
+        ThemeToggleButton(
+          themeMode = themeMode,
+          onToggle = { viewModel.cycleThemeMode() }
         )
       }
     }

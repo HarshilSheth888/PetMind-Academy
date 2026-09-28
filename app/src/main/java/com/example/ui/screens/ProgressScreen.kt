@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -44,7 +43,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,7 +58,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.TrainingGuidesData
 import com.example.data.model.MilestoneEntity
@@ -67,9 +65,8 @@ import com.example.data.model.PetEntity
 import com.example.data.model.TrainingLogEntity
 import com.example.ui.components.AddEditPetDialog
 import com.example.ui.components.PetAvatarBadge
+import com.example.ui.components.ThemeToggleButton
 import com.example.ui.theme.AmberSecondary
-import com.example.ui.theme.BadgeGreenBg
-import com.example.ui.theme.BadgeGreenText
 import com.example.ui.theme.BrandGradient
 import com.example.ui.theme.TealPrimary
 import com.example.viewmodel.PetMindViewModel
@@ -81,7 +78,7 @@ import java.util.Locale
 fun ProgressScreen(
   viewModel: PetMindViewModel,
   onNavigateToGuide: (String) -> Unit,
-  modifier: Modifier = Modifier
+  modifier: Modifier = Modifier,
 ) {
   val allPets by viewModel.allPets.collectAsStateWithLifecycle()
   val activePet by viewModel.activePet.collectAsStateWithLifecycle()
@@ -90,9 +87,10 @@ fun ProgressScreen(
   val milestones by viewModel.currentPetMilestones.collectAsStateWithLifecycle()
   val totalTrainingTimeSeconds by viewModel.currentPetTotalTime.collectAsStateWithLifecycle()
   val totalSessionCount by viewModel.currentPetSessionCount.collectAsStateWithLifecycle()
+  val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
 
   var selectedTab by remember { mutableIntStateOf(0) } // 0: Skills, 1: Milestones, 2: Logs History
-  var showAddPetDialog by remember { mutableStateOf(false) }
+  var showAddPetDialog by remember { mutableStateOf(value = false) }
   var petToEdit by remember { mutableStateOf<PetEntity?>(null) }
 
   val masteredCount = remember(skillProgressList) {
@@ -118,7 +116,7 @@ fun ProgressScreen(
           horizontalArrangement = Arrangement.SpaceBetween,
           verticalAlignment = Alignment.CenterVertically
         ) {
-          Column {
+          Column(modifier = Modifier.weight(1f, fill = false)) {
             Text(
               text = "Pet Development",
               style = MaterialTheme.typography.headlineMedium.copy(
@@ -133,16 +131,25 @@ fun ProgressScreen(
             )
           }
 
-          Button(
-            onClick = { showAddPetDialog = true },
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-            modifier = Modifier.testTag("add_pet_top_button")
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
           ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("Add Pet", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            ThemeToggleButton(
+              themeMode = themeMode,
+              onToggle = { viewModel.cycleThemeMode() }
+            )
+            Button(
+              onClick = { showAddPetDialog = true },
+              shape = RoundedCornerShape(12.dp),
+              colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+              contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+              modifier = Modifier.testTag("add_pet_top_button")
+            ) {
+              Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+              Spacer(modifier = Modifier.width(4.dp))
+              Text("Add Pet", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            }
           }
         }
 
@@ -165,7 +172,7 @@ fun ProgressScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
               ) {
-                PetAvatarBadge(avatarIndex = pet.avatarIndex, species = pet.species, sizeDp = 36)
+                PetAvatarBadge(avatarIndex = pet.avatarIndex, sizeDp = 36)
                 Column {
                   Text(
                     text = pet.name,
@@ -211,7 +218,7 @@ fun ProgressScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
               ) {
-                PetAvatarBadge(avatarIndex = pet.avatarIndex, species = pet.species, sizeDp = 48)
+                PetAvatarBadge(avatarIndex = pet.avatarIndex, sizeDp = 48)
                 Column {
                   Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -281,14 +288,14 @@ fun ProgressScreen(
         // Training Time
         StatCard(
           label = "Total Time",
-          value = "${(totalTrainingTimeSeconds ?: 0) / 60}m",
+          value = "${totalTrainingTimeSeconds / 60}m",
           icon = Icons.Default.Timer,
           modifier = Modifier.weight(1f)
         )
         // Sessions
         StatCard(
           label = "Sessions",
-          value = "$totalSessionCount",
+          value = totalSessionCount.toString(),
           icon = Icons.Default.History,
           modifier = Modifier.weight(1f)
         )
@@ -312,7 +319,7 @@ fun ProgressScreen(
 
     // Section Tabs
     item {
-      TabRow(
+      PrimaryTabRow(
         selectedTabIndex = selectedTab,
         modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
         containerColor = MaterialTheme.colorScheme.surface

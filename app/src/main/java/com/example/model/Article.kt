@@ -1,10 +1,12 @@
 package com.example.model
 
+import com.example.data.model.PetEntity
+
 data class QuizQuestion(
   val question: String,
   val options: List<String>,
   val correctOptionIndex: Int,
-  val explanation: String
+  val explanation: String,
 )
 
 data class ArticleSection(
@@ -27,12 +29,32 @@ data class Article(
   val corePsychologyInsight: String,
   val sections: List<ArticleSection>,
   val quiz: List<QuizQuestion>
-)
+) {
+  fun matchesSpecies(selectedSpecies: Set<String>, activePet: PetEntity?): Boolean {
+    if (selectedSpecies.isNotEmpty()) {
+      return speciesTarget.equals("All Pets", ignoreCase = true) ||
+        selectedSpecies.any { species ->
+          speciesTarget.contains(species, ignoreCase = true)
+        }
+    }
+    if (activePet != null) {
+      val petSpecies = activePet.species
+      if (petSpecies.equals("OTHER", ignoreCase = true)) {
+        return speciesTarget.equals("All Pets", ignoreCase = true)
+      }
+      return speciesTarget.equals("All Pets", ignoreCase = true) ||
+        speciesTarget.contains(petSpecies, ignoreCase = true) ||
+        (petSpecies.equals("DOG", ignoreCase = true) && speciesTarget.contains("Dog", ignoreCase = true)) ||
+        (petSpecies.equals("CAT", ignoreCase = true) && speciesTarget.contains("Cat", ignoreCase = true))
+    }
+    return true
+  }
+}
 
-enum class ArticleCategory(val title: String, val tagColor: String) {
-  PSYCHOLOGY("Pet Psychology", "Blue"),
-  COGNITION("Cognitive Development", "Purple"),
-  BEHAVIOR_SOLUTIONS("Behavior & Fixes", "Rose"),
-  ENRICHMENT("Mental Enrichment", "Amber"),
-  BONDING("Bonding & Trust", "Green")
+enum class ArticleCategory(val title: String) {
+  PSYCHOLOGY("Pet Psychology"),
+  COGNITION("Cognitive Development"),
+  BEHAVIOR_SOLUTIONS("Behavior & Fixes"),
+  ENRICHMENT("Mental Enrichment"),
+  BONDING("Bonding & Trust")
 }

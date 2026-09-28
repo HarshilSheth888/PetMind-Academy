@@ -16,7 +16,7 @@ val AmberOnSecondaryContainer = Color(0xFF001D36)
 
 // Brand Gradient matching App Icon
 val BrandGradient = Brush.linearGradient(
-  colors = listOf(Color(0xFF0A2B62), Color(0xFF97D0D9))
+  colors = listOf(Color(0xFF0A2B62), Color(0xFF97D0D9)),
 )
 
 val HoneyTertiary = Color(0xFFB87822)
