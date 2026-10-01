@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,7 +28,6 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -59,6 +59,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.data.model.PetEntity
+import com.example.ui.theme.BrandGradient
 import com.example.util.GeminiPanicHelper
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -79,15 +81,17 @@ data class PanicMessage(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PanicModeModal(
+  activePet: PetEntity?,
   onExitPanic: () -> Unit,
   modifier: Modifier = Modifier
 ) {
   val coroutineScope = rememberCoroutineScope()
+  val petName = activePet?.name ?: "your pet"
   val messages = remember {
     mutableStateListOf(
       PanicMessage(
         sender = MessageSender.AI,
-        text = "🚨 **Gemini AI Panic Assistant Active**. Take a deep breath. I am here with you. What is going on with your pet right now? Describe their symptoms, behavior, or tap the camera icon to show me what's happening."
+        text = "🚨 **Gemini AI Panic & Calm Assistant Active** for $petName. Take a deep breath. I am with you and $petName. What is going on right now? Describe their symptoms, behavior, or tap the camera icon to show me what's happening."
       )
     )
   }
@@ -143,72 +147,78 @@ fun PanicModeModal(
           .fillMaxSize()
           .imePadding()
       ) {
-        // Emergency Header
+        // Emergency & AI Header with Brand Gradient
         Surface(
-          color = Color(0xFFC62828), // Deep emergency red
-          modifier = Modifier.fillMaxWidth()
+          modifier = Modifier.fillMaxWidth(),
+          color = MaterialTheme.colorScheme.surface,
+          tonalElevation = 6.dp,
+          shadowElevation = 4.dp
         ) {
-          Row(
+          Box(
             modifier = Modifier
               .fillMaxWidth()
-              .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+              .background(BrandGradient)
           ) {
             Row(
-              verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.spacedBy(10.dp)
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
             ) {
-              Icon(
-                imageVector = Icons.Default.Warning,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(28.dp)
-              )
-              Column {
-                Row(
-                  verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.spacedBy(6.dp)
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+              ) {
+                Box(
+                  modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.2f)),
+                  contentAlignment = Alignment.Center
                 ) {
-                  Text(
-                    text = "🚨 AI PANIC & CALM MODE",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Black,
-                    color = Color.White
+                  Icon(
+                    imageVector = Icons.Default.Psychology,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
                   )
-                  Surface(
-                    color = Color.White.copy(alpha = 0.25f),
-                    shape = RoundedCornerShape(6.dp)
+                }
+                Column {
+                  Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                   ) {
                     Text(
-                      text = "✨ Gemini 2.5",
-                      modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                      style = MaterialTheme.typography.labelSmall,
-                      color = Color.White,
-                      fontWeight = FontWeight.Bold
+                      text = "✨ Gemini AI Calm & Emergency",
+                      style = MaterialTheme.typography.titleMedium,
+                      fontWeight = FontWeight.Bold,
+                      color = Color.White
                     )
                   }
+                  Text(
+                    text = activePet?.let { "Supporting ${it.name} (${it.breed.ifBlank { it.species }})" } ?: "Real-time pet nervous system co-regulation",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.9f)
+                  )
                 }
-                Text(
-                  text = "Powered by Google Gemini AI • Real-time emergency support",
-                  style = MaterialTheme.typography.labelSmall,
-                  color = Color.White.copy(alpha = 0.85f)
+              }
+
+              IconButton(
+                onClick = onExitPanic,
+                modifier = Modifier
+                  .size(38.dp)
+                  .clip(CircleShape)
+                  .background(Color.White.copy(alpha = 0.2f))
+                  .testTag("exit_panic_button")
+              ) {
+                Icon(
+                  imageVector = Icons.Default.Close,
+                  contentDescription = "Exit Panic Mode",
+                  tint = Color.White,
+                  modifier = Modifier.size(20.dp)
                 )
               }
-            }
-
-            Button(
-              onClick = onExitPanic,
-              colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-              shape = RoundedCornerShape(12.dp),
-              modifier = Modifier.testTag("exit_panic_button")
-            ) {
-              Text(
-                text = "Exit Panic Mode",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFFC62828)
-              )
             }
           }
         }
@@ -221,7 +231,7 @@ fun PanicModeModal(
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
           contentPadding = PaddingValues(vertical = 16.dp),
-          verticalArrangement = Arrangement.spacedBy(12.dp)
+          verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
           items(messages) { msg ->
             val isAi = msg.sender == MessageSender.AI
@@ -231,21 +241,22 @@ fun PanicModeModal(
             ) {
               Card(
                 modifier = Modifier
-                  .fillMaxWidth(0.85f)
+                  .fillMaxWidth(0.88f)
                   .testTag(if (isAi) "ai_message" else "user_message"),
                 shape = RoundedCornerShape(
-                  topStart = 16.dp,
-                  topEnd = 16.dp,
-                  bottomStart = if (isAi) 4.dp else 16.dp,
-                  bottomEnd = if (isAi) 16.dp else 4.dp
+                  topStart = 18.dp,
+                  topEnd = 18.dp,
+                  bottomStart = if (isAi) 4.dp else 18.dp,
+                  bottomEnd = if (isAi) 18.dp else 4.dp
                 ),
                 colors = CardDefaults.cardColors(
                   containerColor = if (isAi) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primaryContainer
-                )
+                ),
+                border = if (isAi) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)) else null
               ) {
                 Column(
-                  modifier = Modifier.padding(14.dp),
-                  verticalArrangement = Arrangement.spacedBy(6.dp)
+                  modifier = Modifier.padding(16.dp),
+                  verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                   Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -263,7 +274,7 @@ fun PanicModeModal(
                         tint = if (isAi) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer
                       )
                       Text(
-                        text = if (isAi) "✨ Gemini AI" else "You",
+                        text = if (isAi) "✨ Gemini AI Assistant" else "You",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = if (isAi) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer
@@ -280,7 +291,7 @@ fun PanicModeModal(
                   if (msg.isCameraCapture) {
                     Surface(
                       color = MaterialTheme.colorScheme.surface,
-                      shape = RoundedCornerShape(8.dp),
+                      shape = RoundedCornerShape(10.dp),
                       modifier = Modifier.fillMaxWidth()
                     ) {
                       Row(
@@ -290,7 +301,7 @@ fun PanicModeModal(
                       ) {
                         Icon(Icons.Default.CameraAlt, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Text(
-                          text = "📷 Live Camera Feed / Back Posture Scan",
+                          text = "📷 Live Posture & Spine Scan Captured",
                           style = MaterialTheme.typography.labelMedium,
                           fontWeight = FontWeight.Bold,
                           color = MaterialTheme.colorScheme.onSurface
@@ -303,7 +314,7 @@ fun PanicModeModal(
                     text = msg.text,
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (isAi) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimaryContainer,
-                    lineHeight = 20.sp
+                    lineHeight = 22.sp
                   )
                 }
               }
@@ -317,22 +328,23 @@ fun PanicModeModal(
                 horizontalArrangement = Arrangement.Start
               ) {
                 Card(
-                  modifier = Modifier.fillMaxWidth(0.7f),
-                  shape = RoundedCornerShape(16.dp),
-                  colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                  modifier = Modifier.fillMaxWidth(0.75f),
+                  shape = RoundedCornerShape(18.dp),
+                  colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                  border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 ) {
                   Row(
-                    modifier = Modifier.padding(12.dp),
+                    modifier = Modifier.padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                   ) {
                     CircularProgressIndicator(
-                      modifier = Modifier.size(18.dp),
-                      strokeWidth = 2.dp,
+                      modifier = Modifier.size(20.dp),
+                      strokeWidth = 2.5.dp,
                       color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                      text = "✨ Gemini AI is processing symptoms...",
+                      text = "✨ Gemini AI is analyzing nervous system & behavioral state...",
                       style = MaterialTheme.typography.labelSmall,
                       color = MaterialTheme.colorScheme.primary,
                       fontWeight = FontWeight.Bold
@@ -352,10 +364,10 @@ fun PanicModeModal(
           Column(
             modifier = Modifier
               .fillMaxWidth()
-              .padding(vertical = 8.dp)
+              .padding(vertical = 10.dp)
           ) {
             Text(
-              text = "⚡ Quick Symptom Reports:",
+              text = "⚡ Quick Emergency Reports for $petName:",
               style = MaterialTheme.typography.labelSmall,
               fontWeight = FontWeight.Bold,
               color = MaterialTheme.colorScheme.primary,
@@ -368,15 +380,16 @@ fun PanicModeModal(
               items(quickSymptoms) { symptom ->
                 Surface(
                   modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(18.dp))
                     .clickable { handleUserQuery(symptom) }
                     .testTag("symptom_chip_$symptom"),
                   color = MaterialTheme.colorScheme.secondaryContainer,
-                  shape = RoundedCornerShape(16.dp)
+                  shape = RoundedCornerShape(18.dp),
+                  tonalElevation = 2.dp
                 ) {
                   Text(
                     text = symptom,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -400,7 +413,6 @@ fun PanicModeModal(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
           ) {
-            // Camera Icon Button to show pet's back / posture
             IconButton(
               onClick = { showCameraSimulation = true },
               modifier = Modifier
@@ -411,7 +423,7 @@ fun PanicModeModal(
             ) {
               Icon(
                 imageVector = Icons.Default.CameraAlt,
-                contentDescription = "Show Pet Back via Camera",
+                contentDescription = "Scan Posture via Camera",
                 tint = MaterialTheme.colorScheme.onPrimaryContainer
               )
             }
@@ -422,7 +434,7 @@ fun PanicModeModal(
               modifier = Modifier
                 .weight(1f)
                 .testTag("panic_input_field"),
-              placeholder = { Text("Tell Gemini AI how pet is behaving...") },
+              placeholder = { Text("Tell Gemini AI how $petName is behaving...") },
               shape = RoundedCornerShape(24.dp),
               colors = OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
@@ -441,13 +453,13 @@ fun PanicModeModal(
               modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFC62828))
+                .background(MaterialTheme.colorScheme.primary)
                 .testTag("panic_send_button")
             ) {
               Icon(
                 imageVector = Icons.AutoMirrored.Filled.Send,
                 contentDescription = "Send",
-                tint = Color.White
+                tint = MaterialTheme.colorScheme.onPrimary
               )
             }
           }
@@ -485,7 +497,7 @@ fun PanicModeModal(
             ) {
               Icon(Icons.Default.CameraAlt, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
               Text(
-                text = "Live Camera: Pet Back & Posture",
+                text = "Live Camera: $petName Posture Scan",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
               )
@@ -495,7 +507,6 @@ fun PanicModeModal(
             }
           }
 
-          // Simulated camera viewfinder preview box
           Box(
             modifier = Modifier
               .fillMaxWidth()
@@ -511,20 +522,20 @@ fun PanicModeModal(
             ) {
               Text(text = "🐕 / 🐈", fontSize = 48.sp)
               Text(
-                text = "📷 Viewfinder Active: Aim camera at pet's back or body",
+                text = "📷 Viewfinder Active: Aim camera at $petName's back or spine",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White,
                 fontWeight = FontWeight.Medium
               )
               Surface(
-                color = Color.Red.copy(alpha = 0.8f),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
                 shape = RoundedCornerShape(8.dp)
               ) {
                 Text(
-                  text = "🔴 Gemini AI Vision Scan: Ready",
-                  modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                  text = "✨ Gemini AI Vision Scan: Ready",
+                  modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                   style = MaterialTheme.typography.labelSmall,
-                  color = Color.White,
+                  color = MaterialTheme.colorScheme.onPrimary,
                   fontWeight = FontWeight.Bold
                 )
               }
@@ -532,7 +543,7 @@ fun PanicModeModal(
           }
 
           Text(
-            text = "Point your camera at your pet's back, spine, or posture to let Gemini AI analyze physical tension and stress signals instantly.",
+            text = "Point your camera at $petName's back, spine, or body posture to let Gemini AI analyze physical tension and stress signals instantly.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
           )
@@ -540,22 +551,22 @@ fun PanicModeModal(
           Button(
             onClick = {
               showCameraSimulation = false
-              handleUserQuery("Showed pet's back via camera feed. Analyzing posture and spine tension.", isCamera = true)
+              handleUserQuery("Showed $petName's back via camera feed. Analyzing posture and spine tension.", isCamera = true)
             },
             modifier = Modifier
               .fillMaxWidth()
               .height(50.dp)
               .testTag("capture_back_button"),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828)),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(14.dp)
           ) {
-            Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color.White)
+            Icon(Icons.Default.CameraAlt, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-              text = "Capture & Analyze Pet's Back",
+              text = "Capture & Analyze Posture",
               style = MaterialTheme.typography.labelLarge,
               fontWeight = FontWeight.Bold,
-              color = Color.White
+              color = MaterialTheme.colorScheme.onPrimary
             )
           }
         }

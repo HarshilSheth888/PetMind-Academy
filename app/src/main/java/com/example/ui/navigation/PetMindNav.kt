@@ -1,33 +1,46 @@
 package com.example.ui.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.AutoGraph
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Psychology
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -82,6 +95,7 @@ fun PetMindAppScaffold(
   modifier: Modifier = Modifier
 ) {
   val navController = rememberNavController()
+  val activePet by viewModel.activePet.collectAsStateWithLifecycle()
   val navBackStackEntry by navController.currentBackStackEntryAsState()
   val currentRoute = navBackStackEntry?.destination?.route
 
@@ -90,14 +104,51 @@ fun PetMindAppScaffold(
 
   Scaffold(
     floatingActionButton = {
-      ExtendedFloatingActionButton(
-        onClick = { showPanicModal = true },
-        containerColor = Color(0xFFC62828),
-        contentColor = Color.White,
-        icon = { Icon(Icons.Default.Warning, contentDescription = "Panic Mode") },
-        text = { Text("🚨 Panic Mode", fontWeight = FontWeight.Bold) },
-        modifier = Modifier.testTag("panic_mode_fab")
-      )
+      Surface(
+        modifier = Modifier
+          .clip(RoundedCornerShape(24.dp))
+          .clickable { showPanicModal = true }
+          .testTag("panic_mode_fab"),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = RoundedCornerShape(24.dp),
+        shadowElevation = 6.dp,
+        tonalElevation = 6.dp
+      ) {
+        Row(
+          modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+          Box(
+            modifier = Modifier
+              .size(36.dp)
+              .clip(CircleShape)
+              .background(MaterialTheme.colorScheme.primary),
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              imageVector = Icons.Default.Psychology,
+              contentDescription = "AI Assistant",
+              tint = MaterialTheme.colorScheme.onPrimary,
+              modifier = Modifier.size(20.dp)
+            )
+          }
+          Column {
+            Text(
+              text = "✨ Gemini AI Calm",
+              style = MaterialTheme.typography.labelMedium,
+              fontWeight = FontWeight.Bold,
+              color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Text(
+              text = activePet?.let { "Helping ${it.name}" } ?: "Emergency Help",
+              style = MaterialTheme.typography.labelSmall,
+              fontSize = 10.sp,
+              color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+            )
+          }
+        }
+      }
     },
     bottomBar = {
       if (isBottomBarVisible) {
@@ -132,6 +183,7 @@ fun PetMindAppScaffold(
   ) { innerPadding ->
     if (showPanicModal) {
       PanicModeModal(
+        activePet = activePet,
         onExitPanic = { showPanicModal = false }
       )
     }
