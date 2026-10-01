@@ -50,7 +50,18 @@ android {
     compose = true
     buildConfig = true
   }
-  testOptions { unitTests { isIncludeAndroidResources = true } }
+  testOptions {
+    unitTests {
+      isIncludeAndroidResources = true
+      all {
+        it.jvmArgs(
+          "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED",
+          "--add-opens=java.base/java.lang=ALL-UNNAMED",
+          "--enable-native-access=ALL-UNNAMED"
+        )
+      }
+    }
+  }
   dependenciesInfo {
     includeInApk = false
     includeInBundle = true

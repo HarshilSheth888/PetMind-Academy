@@ -65,7 +65,6 @@ import com.example.data.model.PetEntity
 import com.example.data.model.TrainingLogEntity
 import com.example.ui.components.AddEditPetDialog
 import com.example.ui.components.PetAvatarBadge
-import com.example.ui.components.ThemeToggleButton
 import com.example.ui.theme.AmberSecondary
 import com.example.ui.theme.BrandGradient
 import com.example.ui.theme.TealPrimary
@@ -87,7 +86,6 @@ fun ProgressScreen(
   val milestones by viewModel.currentPetMilestones.collectAsStateWithLifecycle()
   val totalTrainingTimeSeconds by viewModel.currentPetTotalTime.collectAsStateWithLifecycle()
   val totalSessionCount by viewModel.currentPetSessionCount.collectAsStateWithLifecycle()
-  val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
 
   var selectedTab by remember { mutableIntStateOf(0) } // 0: Skills, 1: Milestones, 2: Logs History
   var showAddPetDialog by remember { mutableStateOf(value = false) }
@@ -131,25 +129,16 @@ fun ProgressScreen(
             )
           }
 
-          Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+          Button(
+            onClick = { showAddPetDialog = true },
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.testTag("add_pet_top_button")
           ) {
-            ThemeToggleButton(
-              themeMode = themeMode,
-              onToggle = { viewModel.cycleThemeMode() }
-            )
-            Button(
-              onClick = { showAddPetDialog = true },
-              shape = RoundedCornerShape(12.dp),
-              colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-              contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-              modifier = Modifier.testTag("add_pet_top_button")
-            ) {
-              Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-              Spacer(modifier = Modifier.width(4.dp))
-              Text("Add Pet", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-            }
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(4.dp))
+            Text("Add Pet", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
           }
         }
 

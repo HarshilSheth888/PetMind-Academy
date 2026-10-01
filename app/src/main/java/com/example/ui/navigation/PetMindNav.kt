@@ -8,9 +8,11 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.AutoGraph
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Psychology
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -18,9 +20,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -28,6 +35,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.ui.components.PanicModeModal
 import com.example.ui.screens.ActiveTrainingSessionScreen
 import com.example.ui.screens.ArticleDetailScreen
 import com.example.ui.screens.BehaviorDecoderScreen
@@ -65,7 +73,7 @@ val BottomNavItems = listOf(
   Screen.Learn,
   Screen.Training,
   Screen.Decoder,
-  Screen.Progress
+  Screen.Progress,
 )
 
 @Composable
@@ -78,8 +86,19 @@ fun PetMindAppScaffold(
   val currentRoute = navBackStackEntry?.destination?.route
 
   val isBottomBarVisible = BottomNavItems.any { it.route == currentRoute }
+  var showPanicModal by remember { mutableStateOf(value = false) }
 
   Scaffold(
+    floatingActionButton = {
+      ExtendedFloatingActionButton(
+        onClick = { showPanicModal = true },
+        containerColor = Color(0xFFC62828),
+        contentColor = Color.White,
+        icon = { Icon(Icons.Default.Warning, contentDescription = "Panic Mode") },
+        text = { Text("🚨 Panic Mode", fontWeight = FontWeight.Bold) },
+        modifier = Modifier.testTag("panic_mode_fab")
+      )
+    },
     bottomBar = {
       if (isBottomBarVisible) {
         NavigationBar(modifier = Modifier.testTag("bottom_nav_bar")) {
@@ -111,6 +130,12 @@ fun PetMindAppScaffold(
     },
     modifier = modifier.fillMaxSize()
   ) { innerPadding ->
+    if (showPanicModal) {
+      PanicModeModal(
+        onExitPanic = { showPanicModal = false }
+      )
+    }
+
     NavHost(
       navController = navController,
       startDestination = Screen.Learn.route,

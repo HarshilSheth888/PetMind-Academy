@@ -3,7 +3,6 @@ package com.example.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,7 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TouchApp
@@ -39,7 +36,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,27 +46,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.R
 import com.example.data.TrainingGuidesData
-import com.example.model.GuideDifficulty
 import com.example.model.TrainingGuide
-import com.example.ui.components.CategoryChip
 import com.example.ui.components.DifficultyBadge
 import com.example.ui.components.PetProfileSwitcher
-import com.example.ui.components.ThemeToggleButton
 import com.example.ui.components.TrainingFilterDialog
 import com.example.ui.theme.AmberSecondary
 import com.example.ui.theme.BrandGradient
-import com.example.ui.theme.TealPrimary
 import com.example.util.ClickerAudioHelper
 import com.example.viewmodel.PetMindViewModel
 
@@ -86,7 +75,6 @@ fun TrainingScreen(
   val guides by viewModel.filteredGuides.collectAsStateWithLifecycle()
   val activePet by viewModel.activePet.collectAsStateWithLifecycle()
   val allPets by viewModel.allPets.collectAsStateWithLifecycle()
-  val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
   val currentSkillProgress by viewModel.currentPetSkillProgress.collectAsStateWithLifecycle()
   val progressMap = remember(currentSkillProgress) { currentSkillProgress.associateBy { it.guideId } }
 
@@ -102,7 +90,7 @@ fun TrainingScreen(
       onApply = { difficulties, categories, species ->
         viewModel.setTrainingFilters(difficulties, categories, species)
       },
-      onDismiss = { showFilterDialog = false }
+      onDismiss = { showFilterDialog = false },
     )
   }
 
@@ -121,13 +109,15 @@ fun TrainingScreen(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
       ) {
-        Column(modifier = Modifier.weight(1f, fill = false)) {
+        Column(modifier = Modifier.weight(1f)) {
           Text(
             text = "Interactive Training",
             style = MaterialTheme.typography.headlineMedium.copy(
-              brush = BrandGradient
+              brush = BrandGradient,
+              fontSize = 21.sp
             ),
-            fontWeight = FontWeight.ExtraBold
+            fontWeight = FontWeight.ExtraBold,
+            maxLines = 1
           )
           Text(
             text = if (activePet != null) "Programs for ${activePet?.name}" else "Expert positive reinforcement guides",
@@ -136,20 +126,11 @@ fun TrainingScreen(
           )
         }
 
-        Row(
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-          ThemeToggleButton(
-            themeMode = themeMode,
-            onToggle = { viewModel.cycleThemeMode() }
-          )
-          PetProfileSwitcher(
-            allPets = allPets,
-            activePet = activePet,
-            onPetSelected = { viewModel.selectPet(it) }
-          )
-        }
+        PetProfileSwitcher(
+          allPets = allPets,
+          activePet = activePet,
+          onPetSelected = { viewModel.selectPet(it) }
+        )
       }
     }
 
@@ -270,7 +251,7 @@ fun TrainingScreen(
       }
     }
 
-    // Guides Count
+    // Guides to Count
     item {
       Row(
         modifier = Modifier
@@ -287,7 +268,7 @@ fun TrainingScreen(
       }
     }
 
-    // Guides List
+    // Guides to List
     items(guides, key = { it.id }) { guide ->
       val progress = progressMap[guide.id]
       val completedSteps = progress?.completedStepsCount ?: 0

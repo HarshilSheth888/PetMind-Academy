@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -322,36 +323,19 @@ fun ThemeToggleButton(
   modifier: Modifier = Modifier
 ) {
   val (icon, label) = when (themeMode) {
-    ThemeMode.SYSTEM -> Icons.Default.BrightnessAuto to "Device Default"
-    ThemeMode.LIGHT -> Icons.Default.LightMode to "Light"
-    ThemeMode.DARK -> Icons.Default.DarkMode to "Dark"
+    ThemeMode.SYSTEM -> Icons.Default.BrightnessAuto to "Theme: Device Default"
+    ThemeMode.LIGHT -> Icons.Default.LightMode to "Theme: Light"
+    ThemeMode.DARK -> Icons.Default.DarkMode to "Theme: Dark"
   }
 
-  Surface(
-    modifier = modifier
-      .clip(RoundedCornerShape(20.dp))
-      .clickable(onClick = onToggle)
-      .testTag("theme_toggle_button"),
-    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-    shape = RoundedCornerShape(20.dp)
+  IconButton(
+    onClick = onToggle,
+    modifier = modifier.testTag("theme_toggle_button")
   ) {
-    Row(
-      modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-      verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-      Icon(
-        imageVector = icon,
-        contentDescription = "Theme: $label",
-        modifier = Modifier.size(18.dp),
-        tint = MaterialTheme.colorScheme.onSurfaceVariant
-      )
-      Text(
-        text = label,
-        style = MaterialTheme.typography.labelSmall,
-        fontWeight = FontWeight.Medium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-      )
-    }
+    Icon(
+      imageVector = icon,
+      contentDescription = label,
+      tint = MaterialTheme.colorScheme.onSurfaceVariant
+    )
   }
 }
