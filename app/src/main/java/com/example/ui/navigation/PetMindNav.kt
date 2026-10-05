@@ -104,54 +104,56 @@ fun PetMindAppScaffold(
 
   Scaffold(
     floatingActionButton = {
-      Surface(
-        modifier = Modifier
-          .clip(RoundedCornerShape(24.dp))
-          .clickable { showPanicModal = true }
-          .testTag("panic_mode_fab"),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        shape = RoundedCornerShape(24.dp),
-        shadowElevation = 6.dp,
-        tonalElevation = 6.dp
-      ) {
-        Row(
-          modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(10.dp)
+      if (isBottomBarVisible && !showPanicModal) {
+        Surface(
+          modifier = Modifier
+            .clip(RoundedCornerShape(24.dp))
+            .clickable { showPanicModal = true }
+            .testTag("panic_mode_fab"),
+          color = MaterialTheme.colorScheme.primaryContainer,
+          shape = RoundedCornerShape(24.dp),
+          shadowElevation = 6.dp,
+          tonalElevation = 6.dp
         ) {
-          Box(
-            modifier = Modifier
-              .size(36.dp)
-              .clip(CircleShape)
-              .background(MaterialTheme.colorScheme.primary),
-            contentAlignment = Alignment.Center
+          Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
           ) {
-            Icon(
-              imageVector = Icons.Default.Psychology,
-              contentDescription = "AI Assistant",
-              tint = MaterialTheme.colorScheme.onPrimary,
-              modifier = Modifier.size(20.dp)
-            )
-          }
-          Column {
-            Text(
-              text = "✨ Gemini AI Calm",
-              style = MaterialTheme.typography.labelMedium,
-              fontWeight = FontWeight.Bold,
-              color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-            Text(
-              text = activePet?.let { "Helping ${it.name}" } ?: "Emergency Help",
-              style = MaterialTheme.typography.labelSmall,
-              fontSize = 10.sp,
-              color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-            )
+            Box(
+              modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary),
+              contentAlignment = Alignment.Center
+            ) {
+              Icon(
+                imageVector = Icons.Default.Psychology,
+                contentDescription = "AI Assistant",
+                tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(20.dp)
+              )
+            }
+            Column {
+              Text(
+                text = "✨ Gemini AI Calm",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+              )
+              Text(
+                text = activePet?.let { "Helping ${it.name}" } ?: "Emergency Help",
+                style = MaterialTheme.typography.labelSmall,
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+              )
+            }
           }
         }
       }
     },
     bottomBar = {
-      if (isBottomBarVisible) {
+      if (isBottomBarVisible && !showPanicModal) {
         NavigationBar(modifier = Modifier.testTag("bottom_nav_bar")) {
           BottomNavItems.forEach { screen ->
             val isSelected = currentRoute == screen.route
@@ -181,103 +183,115 @@ fun PetMindAppScaffold(
     },
     modifier = modifier.fillMaxSize()
   ) { innerPadding ->
-    if (showPanicModal) {
-      PanicModeModal(
-        activePet = activePet,
-        onExitPanic = { showPanicModal = false }
-      )
-    }
-
-    NavHost(
-      navController = navController,
-      startDestination = Screen.Learn.route,
+    Box(
       modifier = Modifier
         .fillMaxSize()
-        .padding(innerPadding)
     ) {
-      // 1. Learn Screen (Articles)
-      composable(Screen.Learn.route) {
-        HomeScreen(
-          viewModel = viewModel,
-          onArticleClick = { articleId ->
-            navController.navigate(Screen.ArticleDetail.createRoute(articleId))
+      NavHost(
+        navController = navController,
+        startDestination = Screen.Learn.route,
+        modifier = Modifier
+          .fillMaxSize()
+          .padding(innerPadding)
+      ) {
+        // 1. Learn Screen (Articles)
+        composable(Screen.Learn.route) {
+          HomeScreen(
+            viewModel = viewModel,
+            onArticleClick = { articleId ->
+              navController.navigate(Screen.ArticleDetail.createRoute(articleId))
+            },
+            onOpenDecoder = {
+              navController.navigate(Screen.Decoder.route)
+            },
+            onOpenTrain = {
+              navController.navigate(Screen.Training.route)
+            }
+          )
+        }
+
+        // 2. Training Guides Catalog
+        composable(Screen.Training.route) {
+          TrainingScreen(
+            viewModel = viewModel,
+            onGuideClick = { guideId ->
+              navController.navigate(Screen.GuideDetail.createRoute(guideId))
+            },
+            onStartSession = { guideId ->
+              navController.navigate(Screen.ActiveSession.createRoute(guideId))
+            }
+          )
+        }
+
+        // 3. Behavior Decoder Screen
+        composable(Screen.Decoder.route) {
+          BehaviorDecoderScreen(viewModel = viewModel)
+        }
+
+        // 4. Progress & Milestones Screen
+        composable(Screen.Progress.route) {
+          ProgressScreen(
+            viewModel = viewModel,
+            onNavigateToGuide = { guideId ->
+              navController.navigate(Screen.GuideDetail.createRoute(guideId))
+            }
+          )
+        }
+
+        // 5. Article Detail Screen
+        composable(
+          route = Screen.ArticleDetail.route,
+          arguments = listOf(navArgument("articleId") { type = NavType.StringType })
+        ) { backStackEntry ->
+          val articleId = backStackEntry.arguments?.getString("articleId") ?: ""
+          ArticleDetailScreen(
+            articleId = articleId,
+            viewModel = viewModel,
+            onNavigateBack = { navController.popBackStack() }
+          )
+        }
+
+        // 6. Guide Detail Screen
+        composable(
+          route = Screen.GuideDetail.route,
+          arguments = listOf(navArgument("guideId") { type = NavType.StringType })
+        ) { backStackEntry ->
+          val guideId = backStackEntry.arguments?.getString("guideId") ?: ""
+          GuideDetailScreen(
+            guideId = guideId,
+            viewModel = viewModel,
+            onNavigateBack = { navController.popBackStack() },
+            onStartSession = { gId ->
+              navController.navigate(Screen.ActiveSession.createRoute(gId))
+            }
+          )
+        }
+
+        // 7. Active Training Session Companion
+        composable(
+          route = Screen.ActiveSession.route,
+          arguments = listOf(navArgument("guideId") { type = NavType.StringType })
+        ) { backStackEntry ->
+          val guideId = backStackEntry.arguments?.getString("guideId") ?: ""
+          ActiveTrainingSessionScreen(
+            guideId = guideId,
+            viewModel = viewModel,
+            onNavigateBack = { navController.popBackStack() }
+          )
+        }
+      }
+
+      if (showPanicModal) {
+        PanicModeModal(
+          activePet = activePet,
+          onExitPanic = { showPanicModal = false },
+          onNavigateToRoute = { route ->
+            showPanicModal = false
+            navController.navigate(route)
           },
-          onOpenDecoder = {
-            navController.navigate(Screen.Decoder.route)
-          },
-          onOpenTrain = {
-            navController.navigate(Screen.Training.route)
-          }
-        )
-      }
-
-      // 2. Training Guides Catalog
-      composable(Screen.Training.route) {
-        TrainingScreen(
-          viewModel = viewModel,
-          onGuideClick = { guideId ->
-            navController.navigate(Screen.GuideDetail.createRoute(guideId))
-          },
-          onStartSession = { guideId ->
-            navController.navigate(Screen.ActiveSession.createRoute(guideId))
-          }
-        )
-      }
-
-      // 3. Behavior Decoder Screen
-      composable(Screen.Decoder.route) {
-        BehaviorDecoderScreen(viewModel = viewModel)
-      }
-
-      // 4. Progress & Milestones Screen
-      composable(Screen.Progress.route) {
-        ProgressScreen(
-          viewModel = viewModel,
-          onNavigateToGuide = { guideId ->
-            navController.navigate(Screen.GuideDetail.createRoute(guideId))
-          }
-        )
-      }
-
-      // 5. Article Detail Screen
-      composable(
-        route = Screen.ArticleDetail.route,
-        arguments = listOf(navArgument("articleId") { type = NavType.StringType })
-      ) { backStackEntry ->
-        val articleId = backStackEntry.arguments?.getString("articleId") ?: ""
-        ArticleDetailScreen(
-          articleId = articleId,
-          viewModel = viewModel,
-          onNavigateBack = { navController.popBackStack() }
-        )
-      }
-
-      // 6. Guide Detail Screen
-      composable(
-        route = Screen.GuideDetail.route,
-        arguments = listOf(navArgument("guideId") { type = NavType.StringType })
-      ) { backStackEntry ->
-        val guideId = backStackEntry.arguments?.getString("guideId") ?: ""
-        GuideDetailScreen(
-          guideId = guideId,
-          viewModel = viewModel,
-          onNavigateBack = { navController.popBackStack() },
-          onStartSession = { gId ->
-            navController.navigate(Screen.ActiveSession.createRoute(gId))
-          }
-        )
-      }
-
-      // 7. Active Training Session Companion
-      composable(
-        route = Screen.ActiveSession.route,
-        arguments = listOf(navArgument("guideId") { type = NavType.StringType })
-      ) { backStackEntry ->
-        val guideId = backStackEntry.arguments?.getString("guideId") ?: ""
-        ActiveTrainingSessionScreen(
-          guideId = guideId,
-          viewModel = viewModel,
-          onNavigateBack = { navController.popBackStack() }
+          modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
         )
       }
     }
