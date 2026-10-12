@@ -48,6 +48,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.ui.components.AiChatFloatingWindow
 import com.example.ui.components.PanicModeModal
 import com.example.ui.screens.ActiveTrainingSessionScreen
 import com.example.ui.screens.ArticleDetailScreen
@@ -92,7 +93,7 @@ val BottomNavItems = listOf(
 @Composable
 fun PetMindAppScaffold(
   viewModel: PetMindViewModel,
-  modifier: Modifier = Modifier
+  modifier: Modifier = Modifier,
 ) {
   val navController = rememberNavController()
   val activePet by viewModel.activePet.collectAsStateWithLifecycle()
@@ -113,7 +114,7 @@ fun PetMindAppScaffold(
           color = MaterialTheme.colorScheme.primaryContainer,
           shape = RoundedCornerShape(24.dp),
           shadowElevation = 6.dp,
-          tonalElevation = 6.dp
+          tonalElevation = 6.dp,
         ) {
           Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -293,6 +294,8 @@ fun PetMindAppScaffold(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
         )
+      } else {
+        AiChatFloatingWindow()
       }
     }
   }

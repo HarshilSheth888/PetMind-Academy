@@ -5,9 +5,6 @@ import com.example.BuildConfig
 import com.example.data.model.PetEntity
 import com.example.ui.components.MessageSender
 import com.example.ui.components.PanicMessage
-import com.google.firebase.Firebase
-import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.content
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -22,13 +19,13 @@ import java.util.concurrent.TimeUnit
 data class AiResponsePayload(
   val text: String,
   val actionRoute: String? = null,
-  val actionLabel: String? = null
+  val actionLabel: String? = null,
 )
 
 object GeminiPanicHelper {
 
   private const val TAG = "GeminiPanicHelper"
-  private const val MODEL_NAME = "gemini-1.5-flash"
+  private const val MODEL_NAME = "gemini-2.0-flash"
 
   private val okHttpClient = OkHttpClient.Builder()
     .connectTimeout(10, TimeUnit.SECONDS)
@@ -37,20 +34,52 @@ object GeminiPanicHelper {
 
   private const val SYSTEM_INSTRUCTION = """
 You are PetMind Gemini AI, a natural, empathetic, highly intelligent AI companion and expert veterinary behaviorist speaking directly to a pet owner.
-Your goal is to provide fluid, highly tailored, conversational answers just like ChatGPT or Gemini.
 
-CRITICAL SCOPE RULE & DOMAIN GUARDRAIL:
-- Your intelligence and scope are strictly dedicated to pets (dogs, cats, animals, pet behavior, health, training, emotions, and pet-owner guidance).
-- If the user asks non-pet questions (e.g. math problems like "What is 2 + 2?", programming/coding, politics, general history, general news, or non-pet topics), politely decline with:
-  "I'm sorry, but my AI's intelligence is limited only to behavioral analysis, health, training, and care of your pet. How can I help you with your pet today?"
+CRITICAL BOUNDARY & NO-HALLUCINATION RULES:
+1. GIBBERISH & INCOHERENT INPUT GUARDRAIL:
+   - If the user enters random keystrokes, key smashes, gibberish, non-words, or incoherent text (e.g., "asdfghjkl", "qwerty", "123456"), DO NOT invent, assume, or hallucinate any scenarios, symptoms, or pet behaviors.
+   - Instead, respond politely: "I didn't quite catch that. Could you please clarify or describe what is happening with your pet?"
 
-FOR ALL VALID PET-RELATED QUERIES:
-1. Speak in a warm, direct, conversational AI tone like Gemini or ChatGPT.
-2. Answer their question or address their specific pet observation naturally and fluidly.
-3. Offer helpful insights, behavioral explanations, or practical advice in clear, beautiful sentences.
-4. Address the pet owner and their active pet personally by name when provided.
-5. End with a friendly follow-up question.
+2. NO ASSUMPTIONS OR FICTIONAL CONTEXT:
+   - NEVER assume or invent pet behaviors, symptoms, or situations that were not explicitly stated in the user's prompt.
+
+3. DOMAIN & SCOPE CONTROL:
+   - Your expertise is strictly dedicated to pets (health, behavior, training, and care).
+   - If asked non-pet topics (e.g., math, programming, general history, news), politely decline with:
+     "I'm sorry, but my AI's intelligence is limited only to behavioral analysis, health, training, and care of your pet. How can I help you with your pet today?"
+
+4. CONCISE & MOBILE-FRIENDLY TONE:
+   - Speak in a warm, direct, conversational AI tone like Gemini or ChatGPT.
+   - Keep answers natural, empathetic, and concise for mobile screens (1 to 3 short paragraphs maximum).
 """
+
+  fun isGibberishInput(input: String): Boolean {
+    val trimmed = input.trim()
+    if (trimmed.length < 3) return false
+
+    // 1. Single character repeated (e.g. "aaaaaaa", "ffffff")
+    if (trimmed.all { it == trimmed[0] }) return true
+
+    // 2. Common key-smash row patterns without spaces (e.g. "asdfghjkl", "qwertyuiop")
+    val lower = trimmed.lowercase(Locale.getDefault())
+    val keySmashPatterns = listOf(
+      "asdf", "sdfg", "dfgh", "fghj", "ghjk", "hjkl",
+      "qwer", "wert", "erty", "rtyu", "tyui", "yuio", "uiop",
+      "zxcv", "xcvb", "cvbn", "vbnm"
+    )
+    if (!lower.contains(" ") && keySmashPatterns.any { lower.contains(it) } && lower.length > 5) {
+      return true
+    }
+
+    // 3. Vowel ratio check for long single-word inputs (>7 chars)
+    if (!lower.contains(" ") && lower.length >= 8 && lower.all { it.isLetter() }) {
+      val vowels = lower.count { it in "aeiouy" }
+      val vowelRatio = vowels.toDouble() / lower.length
+      if (vowelRatio < 0.12) return true
+    }
+
+    return false
+  }
 
   private fun logWarning(msg: String) {
     try {
@@ -69,7 +98,14 @@ FOR ALL VALID PET-RELATED QUERIES:
     val petName = pet?.name ?: "your pet"
     val lowerPrompt = userPrompt.lowercase(Locale.getDefault()).trim()
 
-    // 1. Domain Guardrail Check for Off-Topic / Math Queries
+    // 1. Check for Gibberish / Key Smash Input
+    if (isGibberishInput(userPrompt)) {
+      return@withContext AiResponsePayload(
+        text = "✨ Gemini AI: I didn't quite catch that. Could you please clarify or describe what is happening with $petName?"
+      )
+    }
+
+    // 2. Domain Guardrail Check for Off-Topic / Math Queries
     val isMathQuery = lowerPrompt.contains("2 + 2") || lowerPrompt.contains("2+2") ||
         lowerPrompt.matches(Regex(".*\\d+\\s*[+\\-*/^=]\\s*\\d+.*")) ||
         lowerPrompt.startsWith("what is 2") || lowerPrompt.startsWith("calculate ") ||
@@ -104,54 +140,7 @@ FOR ALL VALID PET-RELATED QUERIES:
       }
     }
 
-    // 3. Attempt Gemini AI generation via Firebase AI SDK
-    try {
-      val generativeModel = Firebase.ai.generativeModel(
-        modelName = MODEL_NAME,
-        systemInstruction = content { text(SYSTEM_INSTRUCTION) }
-      )
-
-      val petInfo = pet?.let {
-        "Pet Details: Name: ${it.name}, Species: ${it.species}${if (it.breed.isNotBlank()) ", Breed: ${it.breed}" else ""}, Age: ${it.ageMonths} months"
-      } ?: "Pet Details: Name: your pet"
-
-      val historyContext = if (conversationHistory.isNotEmpty()) {
-        val historyTurns = conversationHistory
-          .filter { it.text.isNotBlank() }
-          .takeLast(8)
-          .joinToString("\n") { msg ->
-            val senderLabel = if (msg.sender == MessageSender.USER) "Owner" else "Gemini AI"
-            "$senderLabel: ${msg.text.removePrefix("✨ Gemini AI: ").removePrefix("✨ Gemini AI Assistant: ")}"
-          }
-        "Prior Chat History:\n$historyTurns\n\n"
-      } else ""
-
-      val promptText = buildString {
-        append(petInfo)
-        append("\n")
-        append(historyContext)
-        if (isCameraPostureScan) {
-          append("Owner captured camera scan of pet's back posture & spine: '$userPrompt'. Provide visual posture analysis, physical tension assessment, and immediate calming steps.\n")
-        } else {
-          append("Owner says: '$userPrompt'. Respond as a supportive AI chatbot, directly addressing their concern and pet.\n")
-        }
-      }
-
-      val response = generativeModel.generateContent(promptText)
-      val aiText = response.text
-      if (!aiText.isNullOrBlank()) {
-        val formattedText = if (aiText.startsWith("✨")) aiText else "✨ Gemini AI: $aiText"
-        return@withContext AiResponsePayload(
-          text = formattedText,
-          actionRoute = actionRoute,
-          actionLabel = actionLabel
-        )
-      }
-    } catch (e: Exception) {
-      logWarning("Gemini AI via Firebase unavailable, using local Gemini LLM engine: ${e.message}")
-    }
-
-    // 4. Fallback to Fluid Local Generative AI Engine
+    // 3. Fallback to Fluid Local Generative AI Engine
     val fluidText = generateFluidLocalAiResponse(
       userPrompt = userPrompt,
       conversationHistory = conversationHistory,
@@ -169,7 +158,7 @@ FOR ALL VALID PET-RELATED QUERIES:
   private fun getApiKeySafely(): String {
     return try {
       val field = BuildConfig::class.java.getField("GEMINI_API_KEY")
-      (field.get(null) as? String) ?: ""
+      (field[null] as? String) ?: ""
     } catch (_: Throwable) {
       ""
     }
@@ -183,7 +172,7 @@ FOR ALL VALID PET-RELATED QUERIES:
     isCameraPostureScan: Boolean
   ): String? {
     return try {
-      val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
+      val url = "https://generativelanguage.googleapis.com/v1beta/models/$MODEL_NAME:generateContent?key=$apiKey"
       
       val contentsArray = JSONArray()
       
@@ -208,8 +197,15 @@ FOR ALL VALID PET-RELATED QUERIES:
       }
       contentsArray.put(userContentObj)
 
+      val generationConfig = JSONObject().apply {
+        put("temperature", 0.2)
+        put("topK", 16)
+        put("topP", 0.8)
+      }
+
       val jsonBody = JSONObject().apply {
         put("contents", contentsArray)
+        put("generationConfig", generationConfig)
       }
 
       val mediaType = "application/json; charset=utf-8".toMediaType()
