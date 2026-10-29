@@ -140,9 +140,9 @@ fun PanicModeModal(
   val petSpecies = activePet?.species ?: "pet"
 
   val initialGreeting = if (activePet != null) {
-    "✨ Gemini AI Assistant Active for $petName ($petSpecies). Take a deep breath. I am here to listen, understand what $petName is going through, and help guide you step-by-step. What is happening right now?"
+    "✨ Pawsy Active for $petName ($petSpecies). Take a deep breath. I am here to listen, understand what $petName is going through, and help guide you step-by-step. What is happening right now?"
   } else {
-    "✨ Gemini AI Assistant Active. Take a deep breath. I am here with you and your pet. What is going on right now? Describe their symptoms, behavior, or tap the camera icon to show me what's happening."
+    "✨ Pawsy Active. Take a deep breath. I am here with you and your pet. What is going on right now? Describe their symptoms, behavior, or tap the camera icon to show me what's happening."
   }
 
   val messages = remember(activePet) {
@@ -263,7 +263,7 @@ fun PanicModeModal(
                   horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                   Text(
-                    text = "✨ Gemini AI Pet Companion",
+                    text = "✨ Pawsy Pet Companion",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
@@ -382,7 +382,7 @@ fun PanicModeModal(
                       tint = if (isAi) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     Text(
-                      text = if (isAi) "✨ Gemini AI Assistant" else "You",
+                      text = if (isAi) "✨ Pawsy" else "You",
                       style = MaterialTheme.typography.labelSmall,
                       fontWeight = FontWeight.Bold,
                       color = if (isAi) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer
@@ -475,7 +475,7 @@ fun PanicModeModal(
                     color = MaterialTheme.colorScheme.primary
                   )
                   Text(
-                    text = "✨ Gemini AI is analyzing nervous system & behavioral state...",
+                    text = "✨ Pawsy is analyzing nervous system & behavioral state...",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
@@ -567,7 +567,7 @@ fun PanicModeModal(
               .testTag("panic_input_field"),
             placeholder = {
               Text(
-                text = "Ask Gemini AI about your pet...",
+                text = "Ask Pawsy about your pet...",
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
               )
@@ -669,7 +669,7 @@ fun PanicModeModal(
                 shape = RoundedCornerShape(8.dp)
               ) {
                 Text(
-                  text = "✨ Gemini AI Vision Scan: Ready",
+                  text = "✨ Pawsy Vision Scan: Ready",
                   modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                   style = MaterialTheme.typography.labelSmall,
                   color = MaterialTheme.colorScheme.onPrimary,
@@ -680,7 +680,7 @@ fun PanicModeModal(
           }
 
           Text(
-            text = "Point your camera at $petName's back, spine, or body posture to let Gemini AI analyze physical tension and stress signals instantly.",
+            text = "Point your camera at $petName's back, spine, or body posture to let Pawsy analyze physical tension and stress signals instantly.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
           )

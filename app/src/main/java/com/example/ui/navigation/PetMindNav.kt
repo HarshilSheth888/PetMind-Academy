@@ -137,7 +137,7 @@ fun PetMindAppScaffold(
             }
             Column {
               Text(
-                text = "✨ Gemini AI Calm",
+                text = "✨ Pawsy",
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer

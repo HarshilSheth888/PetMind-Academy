@@ -25,7 +25,7 @@ data class AiResponsePayload(
 object GeminiPanicHelper {
 
   private const val TAG = "GeminiPanicHelper"
-  private const val MODEL_NAME = "gemini-2.0-flash"
+  private const val MODEL_NAME = "gemini-2.5-flash"
 
   private val okHttpClient = OkHttpClient.Builder()
     .connectTimeout(10, TimeUnit.SECONDS)
@@ -33,7 +33,7 @@ object GeminiPanicHelper {
     .build()
 
   private const val SYSTEM_INSTRUCTION = """
-You are PetMind Gemini AI, a natural, empathetic, highly intelligent AI companion and expert veterinary behaviorist speaking directly to a pet owner.
+You are Pawsy, a natural, empathetic, highly intelligent AI companion and expert veterinary behaviorist speaking directly to a pet owner.
 
 CRITICAL BOUNDARY & NO-HALLUCINATION RULES:
 1. GIBBERISH & INCOHERENT INPUT GUARDRAIL:
@@ -49,7 +49,7 @@ CRITICAL BOUNDARY & NO-HALLUCINATION RULES:
      "I'm sorry, but my AI's intelligence is limited only to behavioral analysis, health, training, and care of your pet. How can I help you with your pet today?"
 
 4. CONCISE & MOBILE-FRIENDLY TONE:
-   - Speak in a warm, direct, conversational AI tone like Gemini or ChatGPT.
+   - Speak in a warm, direct, conversational AI tone.
    - Keep answers natural, empathetic, and concise for mobile screens (1 to 3 short paragraphs maximum).
 """
 
@@ -101,7 +101,7 @@ CRITICAL BOUNDARY & NO-HALLUCINATION RULES:
     // 1. Check for Gibberish / Key Smash Input
     if (isGibberishInput(userPrompt)) {
       return@withContext AiResponsePayload(
-        text = "✨ Gemini AI: I didn't quite catch that. Could you please clarify or describe what is happening with $petName?"
+        text = "✨ Pawsy: I didn't quite catch that. Could you please clarify or describe what is happening with $petName?"
       )
     }
 
@@ -119,7 +119,7 @@ CRITICAL BOUNDARY & NO-HALLUCINATION RULES:
 
     if (isMathQuery || isOffTopicQuery) {
       return@withContext AiResponsePayload(
-        text = "✨ Gemini AI: I'm sorry, but my AI's intelligence is limited only to behavioral analysis, health, training, and care of your pet. How can I help you with $petName today?"
+        text = "✨ Pawsy: I'm sorry, but my AI's intelligence is limited only to behavioral analysis, health, training, and care of your pet. How can I help you with $petName today?"
       )
     }
 
@@ -131,7 +131,7 @@ CRITICAL BOUNDARY & NO-HALLUCINATION RULES:
     if (apiKey.isNotBlank() && apiKey != "MY_GEMINI_API_KEY") {
       val restResponse = fetchGeminiRestResponse(apiKey, userPrompt, conversationHistory, pet, isCameraPostureScan)
       if (!restResponse.isNullOrBlank()) {
-        val formattedText = if (restResponse.startsWith("✨")) restResponse else "✨ Gemini AI: $restResponse"
+        val formattedText = if (restResponse.startsWith("✨")) restResponse else "✨ Pawsy: $restResponse"
         return@withContext AiResponsePayload(
           text = formattedText,
           actionRoute = actionRoute,
@@ -185,7 +185,7 @@ CRITICAL BOUNDARY & NO-HALLUCINATION RULES:
         .takeLast(6)
         .joinToString("\n") { msg ->
           val role = if (msg.sender == MessageSender.USER) "User" else "Assistant"
-          "$role: ${msg.text.removePrefix("✨ Gemini AI: ")}"
+          "$role: ${msg.text.removePrefix("✨ Pawsy: ").removePrefix("✨ Gemini AI: ")}"
         }
 
       val scanNote = if (isCameraPostureScan) " [Camera posture scan attached]" else ""
@@ -273,42 +273,42 @@ CRITICAL BOUNDARY & NO-HALLUCINATION RULES:
 
     val historyHeader = if (conversationHistory.size > 2) "Following up on $petName's progress: " else ""
 
-    // 1. Posture & Camera Scan (Check posture first so camera scans take priority over substrings)
-    if (isCameraPostureScan || lowerPrompt.contains("back") || lowerPrompt.contains("posture") || lowerPrompt.contains("spine") || lowerPrompt.contains("arch") || lowerPrompt.contains("stiff")) {
-      return "✨ Gemini AI: $historyHeader I've evaluated $petName's body posture and back tension. A stiff back or arched spine in a $species often signals muscular guarding or physical discomfort. Keep $petName on a soft, supportive surface, lower ambient lights, and speak in a gentle whisper to help soothe their nervous system. Avoid pressing on sensitive spine areas. How does $petName's posture look as they rest?"
-    }
-
-    // 2. Tail Movement & Wiggling
-    if (lowerPrompt.contains("tail") || lowerPrompt.contains("wiggl") || lowerPrompt.contains("wag") || lowerPrompt.contains("flick")) {
-      return "✨ Gemini AI: $historyHeader Tail movement is such an expressive signal in $species behavior! When $petName is $cleanedAction, they are communicating their emotional state directly to you. A loose, sweeping wag usually signals happiness and friendly excitement, whereas a stiff, fast vibrate can mean intense focus or arousal. Pay attention to $petName's eyes and ears—if their body is soft and relaxed, $petName is feeling great and enjoying your presence! Would you like me to open the Behavior Decoder to compare tail signals?"
-    }
-
-    // 3. Excitement & High Energy
-    if (lowerPrompt.contains("excit") || lowerPrompt.contains("hyper") || lowerPrompt.contains("zoom") || lowerPrompt.contains("jump") || lowerPrompt.contains("play")) {
-      return "✨ Gemini AI: $historyHeader It sounds like $petName has a burst of joyful energy right now! When $petName is $cleanedAction, offering a fun, focused activity like a lick mat, a puzzle toy, or a quick game helps channel that excitement constructively. Matching $petName with a calm, happy tone will help them feel secure while enjoying their play. How is $petName's breathing and energy level looking at the moment?"
-    }
-
-    // 4. Feeding & Drinking (Avoid "feed" substring match on "camera feed")
-    if (lowerPrompt.contains("food") || lowerPrompt.contains("diet") || lowerPrompt.contains("eating") || lowerPrompt.contains("treat") || lowerPrompt.contains("drink") || lowerPrompt.contains("kibble") || lowerPrompt.contains("meal")) {
-      return "✨ Gemini AI: $historyHeader Nutrition and calm feeding habits play a big role in $petName's emotional and physical well-being. When caring for $petName, ensure they eat in a quiet, low-stress space without feeling rushed. Always keep fresh water accessible, and offer treats in small, rewarding portions during training or calm moments. Is $petName eating comfortably today?"
-    }
-
-    // 5. Training & Commands
-    if (lowerPrompt.contains("train") || lowerPrompt.contains("trick") || lowerPrompt.contains("sit") || lowerPrompt.contains("stay") || lowerPrompt.contains("walk") || lowerPrompt.contains("leash")) {
-      return "✨ Gemini AI: $historyHeader Working on training with $petName is one of the best ways to build a deep, trusting bond! Short, 3-to-5 minute positive reinforcement sessions work best for $petName's brain. Reward good behavior immediately with a small treat or happy praise so $petName connects the action with positive feelings. Would you like to launch a training guide for $petName now?"
-    }
-
-    // 6. Trembling, Fear & Panic
+    // 1. Trembling, Fear & Panic
     if (lowerPrompt.contains("trembl") || lowerPrompt.contains("shak") || lowerPrompt.contains("pant") || lowerPrompt.contains("fear") || lowerPrompt.contains("scared") || lowerPrompt.contains("thunder")) {
-      return "✨ Gemini AI: $historyHeader I hear your concern about $petName. Trembling and heavy breathing are classic physiological responses to adrenaline or sudden fear in $species. Sit close to $petName, take slow deep belly breaths, and offer a cozy blanket space. Animals naturally mirror human heart rates and calm breathing. Take a breath together with $petName—how is $petName's breathing rate changing now?"
+      return "✨ Pawsy: $historyHeader I hear your concern about $petName. Trembling and heavy breathing are classic physiological responses to adrenaline or sudden fear in $species. Sit close to $petName, take slow deep belly breaths, and offer a cozy blanket space. Animals naturally mirror human heart rates and calm breathing. Take a breath together with $petName—how is $petName's breathing rate changing now?"
+    }
+
+    // 2. Posture & Camera Scan
+    if (isCameraPostureScan || lowerPrompt.contains("posture") || lowerPrompt.contains("spine") || lowerPrompt.contains("arched") || lowerPrompt.contains("stiff back") || lowerPrompt.contains("back posture")) {
+      return "✨ Pawsy: $historyHeader I've evaluated $petName's body posture and back tension. A stiff back or arched spine in a $species often signals muscular guarding or physical discomfort. Keep $petName on a soft, supportive surface, lower ambient lights, and speak in a gentle whisper to help soothe their nervous system. Avoid pressing on sensitive spine areas. How does $petName's posture look as they rest?"
+    }
+
+    // 3. Tail Movement & Wiggling
+    if (lowerPrompt.contains("tail") || lowerPrompt.contains("wiggl") || lowerPrompt.contains("wag") || lowerPrompt.contains("flick")) {
+      return "✨ Pawsy: $historyHeader Tail movement is such an expressive signal in $species behavior! When $petName is $cleanedAction, they are communicating their emotional state directly to you. A loose, sweeping wag usually signals happiness and friendly excitement, whereas a stiff, fast vibrate can mean intense focus or arousal. Pay attention to $petName's eyes and ears—if their body is soft and relaxed, $petName is feeling great and enjoying your presence! Would you like me to open the Behavior Decoder to compare tail signals?"
+    }
+
+    // 4. Excitement & High Energy
+    if (lowerPrompt.contains("excit") || lowerPrompt.contains("hyper") || lowerPrompt.contains("zoom") || lowerPrompt.contains("jump") || lowerPrompt.contains("play")) {
+      return "✨ Pawsy: $historyHeader It sounds like $petName has a burst of joyful energy right now! When $petName is $cleanedAction, offering a fun, focused activity like a lick mat, a puzzle toy, or a quick game helps channel that excitement constructively. Matching $petName with a calm, happy tone will help them feel secure while enjoying their play. How is $petName's breathing and energy level looking at the moment?"
+    }
+
+    // 5. Feeding & Drinking
+    if (lowerPrompt.contains("food") || lowerPrompt.contains("diet") || lowerPrompt.contains("eating") || lowerPrompt.contains("treat") || lowerPrompt.contains("drink") || lowerPrompt.contains("kibble") || lowerPrompt.contains("meal")) {
+      return "✨ Pawsy: $historyHeader Nutrition and calm feeding habits play a big role in $petName's emotional and physical well-being. When caring for $petName, ensure they eat in a quiet, low-stress space without feeling rushed. Always keep fresh water accessible, and offer treats in small, rewarding portions during training or calm moments. Is $petName eating comfortably today?"
+    }
+
+    // 6. Training & Commands
+    if (lowerPrompt.contains("train") || lowerPrompt.contains("trick") || lowerPrompt.contains("sit") || lowerPrompt.contains("stay") || lowerPrompt.contains("walk") || lowerPrompt.contains("leash")) {
+      return "✨ Pawsy: $historyHeader Working on training with $petName is one of the best ways to build a deep, trusting bond! Short, 3-to-5 minute positive reinforcement sessions work best for $petName's brain. Reward good behavior immediately with a small treat or happy praise so $petName connects the action with positive feelings. Would you like to launch a training guide for $petName now?"
     }
 
     // 7. Hiding & Seeking Refuge
     if (lowerPrompt.contains("hid") || lowerPrompt.contains("cower") || lowerPrompt.contains("under") || lowerPrompt.contains("closet")) {
-      return "✨ Gemini AI: $historyHeader When $petName is $cleanedAction, hiding is their way of creating a safe sanctuary. Avoid forcing or pulling $petName out, as that can increase fight-or-flight panic. Instead, place a soft shirt with your scent near their spot and sit quietly nearby. Knowing you are close gives $petName the security they need to emerge when ready. How is $petName doing right now?"
+      return "✨ Pawsy: $historyHeader When $petName is $cleanedAction, hiding is their way of creating a safe sanctuary. Avoid forcing or pulling $petName out, as that can increase fight-or-flight panic. Instead, place a soft shirt with your scent near their spot and sit quietly nearby. Knowing you are close gives $petName the security they need to emerge when ready. How is $petName doing right now?"
     }
 
     // 8. General Fluid Conversational Response
-    return "✨ Gemini AI: $historyHeader I hear you! When $petName is $cleanedAction, observing their subtle body language—like ear angle, eye focus, and breathing rate—gives us wonderful insights into how they are feeling. Creating a calm, reassuring environment helps $petName feel safe and connected with you. How is $petName responding as you spend time together?"
+    return "✨ Pawsy: $historyHeader I hear you! When $petName is $cleanedAction, observing their subtle body language—like ear angle, eye focus, and breathing rate—gives us wonderful insights into how they are feeling. Creating a calm, reassuring environment helps $petName feel safe and connected with you. How is $petName responding as you spend time together?"
   }
 }

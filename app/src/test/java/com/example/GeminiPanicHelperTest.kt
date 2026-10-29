@@ -82,9 +82,9 @@ class GeminiPanicHelperTest {
   @Test
   fun generateCalmingResponse_handlesMultiTurnFollowUpQuestions() = runTest {
     val history = listOf(
-      PanicMessage(sender = MessageSender.AI, text = "✨ Gemini AI Assistant Active for Bella."),
+      PanicMessage(sender = MessageSender.AI, text = "✨ Pawsy Active for Bella."),
       PanicMessage(sender = MessageSender.USER, text = "Bella is hiding under the bed."),
-      PanicMessage(sender = MessageSender.AI, text = "✨ Gemini AI: I understand your concern about Bella...")
+      PanicMessage(sender = MessageSender.AI, text = "✨ Pawsy: I understand your concern about Bella...")
     )
 
     val followUpQuery = "Should I offer her a treat or water while she is under the bed?"

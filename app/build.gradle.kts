@@ -3,6 +3,7 @@ import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesS
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
+  alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.google.devtools.ksp)
   alias(libs.plugins.roborazzi)
   alias(libs.plugins.secrets)
@@ -104,7 +105,10 @@ dependencies {
   implementation(libs.androidx.room.runtime)
   // implementation(libs.coil.compose)
   implementation(libs.converter.moshi)
-  implementation(libs.generativeai)
+  implementation(platform(libs.firebase.bom))
+  implementation(libs.firebase.ai)
+  implementation(libs.firebase.appcheck.debug)
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
   // Uncomment to use Firestore:
   // implementation(libs.firebase.firestore)
 

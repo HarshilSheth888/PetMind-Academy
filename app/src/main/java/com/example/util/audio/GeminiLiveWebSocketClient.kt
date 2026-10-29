@@ -7,6 +7,7 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import com.example.viewmodel.GeminiLiveViewModel
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
@@ -32,7 +33,7 @@ class GeminiLiveWebSocketClient(
     private const val TAG = "GeminiLiveClient"
     private const val BASE_URL =
       "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent"
-    private const val DEFAULT_MODEL = "models/gemini-2.0-flash-exp"
+    private val DEFAULT_MODEL = "models/${GeminiLiveViewModel.GEMINI_LIVE_MODEL_ID}"
   }
 
   private val okHttpClient = OkHttpClient.Builder()

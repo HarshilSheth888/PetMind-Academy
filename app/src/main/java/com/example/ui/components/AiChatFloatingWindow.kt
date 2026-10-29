@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,6 +29,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FloatingActionButton
@@ -40,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -47,7 +54,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -55,32 +66,49 @@ import com.example.viewmodel.ChatMessageItem
 import com.example.viewmodel.ChatMessageSender
 import com.example.viewmodel.ChatUiState
 import com.example.viewmodel.ChatViewModel
+import kotlin.math.roundToInt
 
 @Composable
 fun AiChatFloatingWindow(
   modifier: Modifier = Modifier,
   chatViewModel: ChatViewModel = viewModel(),
 ) {
-  var isChatOpen by remember { mutableStateOf(value = false) }
+  var isChatOpen by remember { mutableStateOf(false) }
+
+  // Drag offset for floating action button
+  var offsetX by remember { mutableFloatStateOf(0f) }
+  var offsetY by remember { mutableFloatStateOf(0f) }
 
   Box(modifier = modifier.fillMaxSize()) {
-    // Floating Action Button
+    // Draggable & Accessible Floating Action Button
     AnimatedVisibility(
       visible = !isChatOpen,
       enter = fadeIn(),
       exit = fadeOut(),
       modifier = Modifier
         .align(Alignment.BottomEnd)
+        .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
         .padding(16.dp)
+        .pointerInput(Unit) {
+          detectDragGestures { change, dragAmount ->
+            change.consume()
+            offsetX += dragAmount.x
+            offsetY += dragAmount.y
+          }
+        }
     ) {
       FloatingActionButton(
         onClick = { isChatOpen = true },
         containerColor = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        modifier = Modifier
+          .size(56.dp)
+          .semantics { contentDescription = "Open Pawsy Floating AI Pet Companion Chat" }
       ) {
         Icon(
           imageVector = Icons.Default.AutoAwesome,
-          contentDescription = "Open AI Chat"
+          contentDescription = "Pawsy Chat Icon",
+          modifier = Modifier.size(28.dp)
         )
       }
     }
@@ -151,19 +179,22 @@ private fun ChatHeader(onClose: () -> Unit) {
         }
         Column {
           Text(
-            text = "AI Chat Assistant",
+            text = "Pawsy Pet Companion",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold
           )
           Text(
-            text = "Online",
+            text = "Firebase AI Logic • Active",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.primary
           )
         }
       }
 
-      IconButton(onClick = onClose) {
+      IconButton(
+        onClick = onClose,
+        modifier = Modifier.semantics { contentDescription = "Close AI Chat Overlay" }
+      ) {
         Icon(imageVector = Icons.Default.Close, contentDescription = "Close Chat")
       }
     }
@@ -179,7 +210,7 @@ private fun ChatMessageList(
   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
   val listState = rememberLazyListState()
 
-  // Auto scroll to latest message
+  // Auto-scroll to latest message
   LaunchedEffect(messages.size, uiState) {
     if (messages.isNotEmpty()) {
       listState.animateScrollToItem(messages.size - 1)
@@ -198,13 +229,15 @@ private fun ChatMessageList(
       ChatMessageBubble(message = message)
     }
 
-    if (uiState is ChatUiState.Loading) {
+    // Thinking Indicator
+    if (uiState is ChatUiState.Thinking) {
       item {
         Row(
           modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
-          horizontalArrangement = Arrangement.Start
+          horizontalArrangement = Arrangement.Start,
+          verticalAlignment = Alignment.CenterVertically
         ) {
           ElevatedCard(shape = RoundedCornerShape(18.dp)) {
             Row(
@@ -221,6 +254,83 @@ private fun ChatMessageList(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
               )
+              Spacer(modifier = Modifier.width(12.dp))
+              IconButton(
+                onClick = { viewModel.cancelCurrentGeneration() },
+                modifier = Modifier.size(24.dp)
+              ) {
+                Icon(
+                  imageVector = Icons.Default.Stop,
+                  contentDescription = "Stop Response Generation",
+                  tint = MaterialTheme.colorScheme.error
+                )
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Streaming State indicator bar
+    if (uiState is ChatUiState.Streaming) {
+      item {
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+          horizontalArrangement = Arrangement.Start
+        ) {
+          Text(
+            text = "⚡ Streaming response...",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary
+          )
+          Spacer(modifier = Modifier.width(8.dp))
+          IconButton(
+            onClick = { viewModel.cancelCurrentGeneration() },
+            modifier = Modifier.size(20.dp)
+          ) {
+            Icon(
+              imageVector = Icons.Default.Stop,
+              contentDescription = "Stop Response",
+              tint = MaterialTheme.colorScheme.error
+            )
+          }
+        }
+      }
+    }
+
+    // Error State with Retry option
+    if (uiState is ChatUiState.Error) {
+      val errorState = uiState as ChatUiState.Error
+      item {
+        ElevatedCard(
+          shape = RoundedCornerShape(12.dp),
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Column(modifier = Modifier.padding(14.dp)) {
+            Text(
+              text = errorState.message,
+              style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.error
+            )
+            if (errorState.isRetryable) {
+              Spacer(modifier = Modifier.size(8.dp))
+              Button(
+                onClick = { viewModel.retryLastMessage() },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+              ) {
+                Icon(
+                  imageVector = Icons.Default.Refresh,
+                  contentDescription = null,
+                  modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                  text = "Retry",
+                  color = MaterialTheme.colorScheme.onErrorContainer
+                )
+              }
             }
           }
         }
@@ -269,7 +379,7 @@ private fun ChatMessageBubble(message: ChatMessageItem) {
 private fun ChatInputField(viewModel: ChatViewModel) {
   var inputText by remember { mutableStateOf("") }
   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-  val isLoading = uiState is ChatUiState.Loading
+  val isBusy = uiState is ChatUiState.Thinking || uiState is ChatUiState.Streaming
 
   Surface(
     tonalElevation = 8.dp,
@@ -286,7 +396,7 @@ private fun ChatInputField(viewModel: ChatViewModel) {
         value = inputText,
         onValueChange = { inputText = it },
         modifier = Modifier.weight(1f),
-        placeholder = { Text("Type a message...") },
+        placeholder = { Text("Ask about your pet...") },
         shape = RoundedCornerShape(24.dp),
         colors = OutlinedTextFieldDefaults.colors(
           unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
@@ -294,37 +404,55 @@ private fun ChatInputField(viewModel: ChatViewModel) {
         ),
         singleLine = true,
         maxLines = 1,
-        enabled = !isLoading
+        enabled = !isBusy
       )
 
-      IconButton(
-        onClick = {
-          if (inputText.isNotBlank()) {
-            viewModel.sendMessage(inputText)
-            inputText = ""
-          }
-        },
-        enabled = inputText.isNotBlank() && !isLoading,
-        modifier = Modifier
-          .size(48.dp)
-          .clip(CircleShape)
-          .background(
-            if (inputText.isNotBlank() && !isLoading) {
-              MaterialTheme.colorScheme.primary
+      if (isBusy) {
+        IconButton(
+          onClick = { viewModel.cancelCurrentGeneration() },
+          modifier = Modifier
+            .size(48.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.errorContainer)
+            .semantics { contentDescription = "Stop AI generation" }
+        ) {
+          Icon(
+            imageVector = Icons.Default.Stop,
+            contentDescription = "Stop Generation",
+            tint = MaterialTheme.colorScheme.onErrorContainer
+          )
+        }
+      } else {
+        IconButton(
+          onClick = {
+            if (inputText.isNotBlank()) {
+              viewModel.sendMessage(inputText)
+              inputText = ""
+            }
+          },
+          enabled = inputText.isNotBlank(),
+          modifier = Modifier
+            .size(48.dp)
+            .clip(CircleShape)
+            .background(
+              if (inputText.isNotBlank()) {
+                MaterialTheme.colorScheme.primary
+              } else {
+                MaterialTheme.colorScheme.surfaceVariant
+              }
+            )
+            .semantics { contentDescription = "Send Message to AI Companion" }
+        ) {
+          Icon(
+            imageVector = Icons.AutoMirrored.Filled.Send,
+            contentDescription = "Send",
+            tint = if (inputText.isNotBlank()) {
+              MaterialTheme.colorScheme.onPrimary
             } else {
-              MaterialTheme.colorScheme.surfaceVariant
+              Color.Gray
             }
           )
-      ) {
-        Icon(
-          imageVector = Icons.AutoMirrored.Filled.Send,
-          contentDescription = "Send",
-          tint = if (inputText.isNotBlank() && !isLoading) {
-            MaterialTheme.colorScheme.onPrimary
-          } else {
-            Color.Gray
-          }
-        )
+        }
       }
     }
   }
