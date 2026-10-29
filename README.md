@@ -28,6 +28,13 @@ https://github.com/user-attachments/assets/3a4418ed-88ae-4e81-bb9e-6382ae15c7b2
 - Step-by-step protocols such as *Loose Leash Walking*, *Emergency Recall*, *Impulse Control: The "Leave It" Game*, and *Cooperative Care*
 - Per-guide progress bars, recommended session counts, and a **Practice** mode
 
+### 🤖 Pawsy – AI Pet Companion
+- In-app AI chat ("Pawsy Pet Companion") scoped to the selected pet, with a **Live** voice mode and photo attachment
+- **Quick Emergency Reports**: one-tap situation chips (e.g. *Trembling & Panting*, *Hiding & Cowering*, *Arching*) that kick off tailored, step-by-step guidance
+- Context-aware responses that reference the pet's profile and recent behavior, with follow-up coaching prompts
+- Surfaced contextually across Learn, Training, and Decoder screens ("Pawsy – Helping Milo")
+
+
 ### 🔍 Decoder
 - Body-language decoder that explains what a pet's posture or signal means (e.g. *Whale Eye*, *Play Bow*, *FRAPs*, tongue flicks and yawns)
 - Signals grouped by emotional state (Defensive/Fear, Playful & Engaged, Alert & Assessing) and body area (eyes, tail, posture)
