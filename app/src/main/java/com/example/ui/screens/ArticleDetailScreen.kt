@@ -9,23 +9,22 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.outlined.BookmarkBorder
@@ -44,7 +43,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,7 +68,6 @@ import com.example.ui.theme.BadgeGreenBg
 import com.example.ui.theme.BadgeGreenText
 import com.example.ui.theme.BadgeRoseBg
 import com.example.ui.theme.BadgeRoseText
-import com.example.ui.theme.TealPrimary
 import com.example.viewmodel.PetMindViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -90,6 +87,27 @@ fun ArticleDetailScreen(
   val progress = progressList.firstOrNull { it.articleId == article.id }
   val isBookmarked = progress?.isBookmarked == true
   val isRead = progress?.isRead == true
+
+  val currentSpeakingId by viewModel.ttsManager.currentSpeakingId.collectAsStateWithLifecycle()
+  val isSpeakingArticle = currentSpeakingId == "article_${article.id}"
+
+  // Build full article speech text
+  val fullArticleSpeech = remember(article) {
+    buildString {
+      append("${article.title}. ")
+      append("${article.subtitle}. ")
+      append("By ${article.authorName}. ")
+      append("${article.summary} ")
+      append("Core insight: ${article.corePsychologyInsight} ")
+      article.sections.forEach { section ->
+        append("${section.heading}. ")
+        append("${section.body} ")
+        if (section.takeaway != null) {
+          append("Key takeaway: ${section.takeaway} ")
+        }
+      }
+    }
+  }
 
   val selectedAnswers = remember { mutableStateMapOf<Int, Int>() }
   var quizSubmitted by remember { mutableStateOf(value = false) }
@@ -120,6 +138,17 @@ fun ArticleDetailScreen(
           }
         },
         actions = {
+          // Text-to-Speech toggle
+          IconButton(
+            onClick = { viewModel.speakOrStop(fullArticleSpeech, "article_${article.id}") },
+            modifier = Modifier.testTag("article_tts_btn")
+          ) {
+            Icon(
+              imageVector = if (isSpeakingArticle) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+              contentDescription = if (isSpeakingArticle) "Stop reading" else "Read article aloud",
+              tint = if (isSpeakingArticle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+            )
+          }
           ThemeToggleButton(
             themeMode = themeMode,
             onToggle = { viewModel.cycleThemeMode() }
@@ -453,7 +482,7 @@ fun QuizQuestionItem(
             ) {
               if (isSubmitted && isCorrect) {
                 Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-              } else if (isSubmitted && isSelected && !isCorrect) {
+              } else if (isSubmitted && isSelected) {
                 Icon(Icons.Default.Close, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
               }
             }

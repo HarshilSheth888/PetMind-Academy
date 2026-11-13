@@ -27,6 +27,8 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -222,7 +224,8 @@ fun BehaviorDecoderScreen(
         isExpanded = isExpanded,
         onToggleExpand = {
           expandedCards[signal.id] = !isExpanded
-        }
+        },
+        viewModel = viewModel
       )
     }
   }
@@ -233,8 +236,29 @@ fun BehaviorSignalCard(
   signal: BehaviorSignal,
   isExpanded: Boolean,
   onToggleExpand: () -> Unit,
+  viewModel: PetMindViewModel,
   modifier: Modifier = Modifier
 ) {
+  val currentSpeakingId by viewModel.ttsManager.currentSpeakingId.collectAsStateWithLifecycle()
+  val isSpeakingThis = currentSpeakingId == signal.id
+
+  // Build a natural speech text from the signal's content
+  val speechText = remember(signal) {
+    buildString {
+      append("${signal.observationTitle}. ")
+      append("${signal.description} ")
+      append("What it means: ${signal.whatItMeans} ")
+      append("Scientific insight: ${signal.scientificExplanation} ")
+      append("What you should do: ")
+      signal.whatOwnerShouldDo.forEachIndexed { i, action ->
+        append("${i + 1}. $action ")
+      }
+      append("What NOT to do: ")
+      signal.whatNOTToDo.forEachIndexed { i, warning ->
+        append("${i + 1}. $warning ")
+      }
+    }
+  }
   Card(
     modifier = modifier
       .fillMaxWidth()
@@ -259,16 +283,36 @@ fun BehaviorSignalCard(
       ) {
         EmotionalStateBadge(state = signal.emotionalState)
 
-        Surface(
-          color = MaterialTheme.colorScheme.surfaceVariant,
-          shape = RoundedCornerShape(6.dp)
+        Row(
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+          verticalAlignment = Alignment.CenterVertically
         ) {
-          Text(
-            text = signal.bodyPart,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-          )
+          Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = RoundedCornerShape(6.dp)
+          ) {
+            Text(
+              text = signal.bodyPart,
+              style = MaterialTheme.typography.labelSmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+            )
+          }
+
+          // Text-to-Speech Button
+          IconButton(
+            onClick = { viewModel.speakOrStop(speechText, signal.id) },
+            modifier = Modifier
+              .size(32.dp)
+              .testTag("tts_button_${signal.id}")
+          ) {
+            Icon(
+              imageVector = if (isSpeakingThis) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+              contentDescription = if (isSpeakingThis) "Stop reading" else "Read aloud",
+              tint = if (isSpeakingThis) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+              modifier = Modifier.size(20.dp)
+            )
+          }
         }
       }
 

@@ -19,6 +19,7 @@ import com.example.model.BehaviorSignal
 import com.example.model.GuideDifficulty
 import com.example.model.TrainingGuide
 import com.example.ui.theme.ThemeMode
+import com.example.util.TextToSpeechManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -52,6 +53,9 @@ data class DecoderUiState(
 
 class PetMindViewModel(application: Application) : AndroidViewModel(application) {
   private val database = AppDatabase.getDatabase(application)
+
+  // --- Text-to-Speech ---
+  val ttsManager = TextToSpeechManager(application)
   val repository = PetMindRepository(
     petDao = database.petDao(),
     trainingDao = database.trainingDao(),
@@ -315,5 +319,19 @@ class PetMindViewModel(application: Application) : AndroidViewModel(application)
 
   fun setDecoderSearch(query: String) {
     _decoderState.value = _decoderState.value.copy(searchQuery = query)
+  }
+
+  // --- TTS ---
+  fun speakOrStop(text: String, contentId: String) {
+    ttsManager.speakOrStop(text, contentId)
+  }
+
+  fun stopSpeaking() {
+    ttsManager.stop()
+  }
+
+  override fun onCleared() {
+    super.onCleared()
+    ttsManager.shutdown()
   }
 }
